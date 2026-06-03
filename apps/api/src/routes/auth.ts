@@ -18,7 +18,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Register
       const hash = await bcrypt.hash(password, 12);
       user = await prisma.user.create({
-        data: { email, passwordHash: hash, name: email.split('@')[0] },
+        data: { email, passwordHash: hash, name: email.split('@')[0], photoUrl: null } as any,
       });
     } else {
       // Login

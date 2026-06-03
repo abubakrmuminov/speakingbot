@@ -117,7 +117,7 @@ export default function Dashboard() {
         <div className="card">
           <h2 className="font-semibold mb-4">Recent Sessions</h2>
           <div className="space-y-2">
-            {stats.recentSessions.map((s) => (
+            {stats.recentSessions.map((s: any) => (
               <button
                 key={s.id}
                 onClick={() => navigate(`/session/${s.id}`)}

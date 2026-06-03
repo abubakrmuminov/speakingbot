@@ -290,7 +290,7 @@ export default function Session() {
         {result.errorAnalysis.length > 0 ? (
           <div className="space-y-3">
             <h2 className="font-semibold text-slate-300 animate-fade-up delay-100">Corrections</h2>
-            {result.errorAnalysis.map((item, i) => (
+            {result.errorAnalysis.map((item: any, i: number) => (
               <ErrorCard key={i} item={item} index={i} />
             ))}
           </div>

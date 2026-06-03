@@ -48,7 +48,7 @@ export default function Reading() {
     });
   };
 
-  const isAllAnswered = (session?.questions || []).every((q: any) => answers[q.id]?.trim().length > 0);
+  const isAllAnswered = (session?.questions || []).every((q: any) => (answers[q.id]?.trim()?.length ?? 0) > 0);
 
   // ─── STAGE: Intro ───────────────────────────────────────────
   if (state === 'intro') {
