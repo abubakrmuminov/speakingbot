@@ -16,7 +16,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { accessToken, refreshToken, setAccessToken, logout } = useAuthStore.getState();
 
   const headers: Record<string, string> = {
-    ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(init.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...(init.headers as Record<string, string> | undefined),
   };
