@@ -36,12 +36,12 @@ bot.command('start', async (ctx) => {
   }
 
   await ctx.reply(
-    `👋 Welcome${firstName ? `, ${firstName}` : ''}!\n\n` +
-      `I'm your *English Speaking Coach* powered by AI 🎙\n\n` +
+    `👋 Welcome${firstName ? `, ${firstName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}` : ''}!\n\n` +
+      `I'm your <b>English Speaking Coach</b> powered by AI 🎙\n\n` +
       `Practice speaking, get instant corrections, and track your fluency progress.\n\n` +
       `📱 Open the app to start your first session:`,
     {
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
       ...Markup.inlineKeyboard([
         [Markup.button.webApp('🎙 Open SpeakAI', WEB_APP_URL)],
       ]),
