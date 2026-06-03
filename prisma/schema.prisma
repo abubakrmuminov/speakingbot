@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String?   @unique
+  passwordHash     String?
+  telegramId       String?   @unique
+  telegramUsername String?
+  name             String?
+  photoUrl         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions        Session[]
+  readingSessions ReadingSession[]
+  errorPatterns   ErrorPattern[]
+  streakData    StreakData?
+  milestones    UserMilestone[]
+  weeklyReports WeeklyReport[]
+
+  @@index([createdAt])
+}
+
+model Session {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  topic    String
+  scenario String
+
+  audioUrl   String?
+  transcript String
+
+  // AI response parts
+  errorAnalysis Json   // { original, corrected, explanation, category, pattern }[]
+  dialogueReply String
+  grammarTip    String
+  topicFeedback String @default("")
+
+  // Metrics
+  fluencyScore   Int
+  wordsPerMinute Int?
+  pauseCount     Int?
+  errorCount     Int
+  confidenceLevel Int @default(3)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model ErrorPattern {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  category    String // "grammar" | "vocabulary" | "pronunciation"
+  pattern     String // e.g. "Present Perfect vs Past Simple"
+  occurrences Int      @default(1)
+  lastSeen    DateTime @default(now())
+  resolved    Boolean  @default(false)
+
+  @@unique([userId, pattern])
+  @@index([userId])
+  @@index([userId, occurrences])
+}
+
+model StreakData {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+  totalSessions  Int       @default(0)
+  totalMinutes   Int       @default(0)
+}
+
+model UserMilestone {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        String // "streak_7" | "streak_30" | "sessions_10" | "sessions_50" | "fluency_80"
+  achievedAt  DateTime @default(now())
+  sharedCard  Boolean  @default(false)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model WeeklyReport {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weekStart     DateTime
+  topErrors     Json  // ErrorPattern[]
+  avgFluency    Float
+  sessionsCount Int
+  sentAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, weekStart])
+}
+model ReadingSession {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Текст
+  passage         String    // сам текст (800-1000 слов)
+  topic           String    // тема текста
+  difficulty      String    // "B2" | "C1"
+
+  // Вопросы и ответы (JSON)
+  questions       Json      // массив Question
+  userAnswers     Json      // массив UserAnswer
+  
+  // Результат
+  totalQuestions  Int
+  correctAnswers  Int
+  readingScore    Int       // 0–100
+  
+  timeSpentSeconds Int?     // сколько секунд провёл на странице
+
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
