@@ -252,7 +252,6 @@ export default function Session() {
 
   // ─── Render: Results ─────────────
   if (phase === 'results' && result) {
-    console.log('[Results] Session data:', result);
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-5 pb-24 md:pb-8">
         {/* New Milestones */}
