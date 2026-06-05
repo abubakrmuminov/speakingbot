@@ -155,9 +155,9 @@ export default function PronunciationDetail() {
           <span>🧠</span> AI Summary
         </h2>
         <p className="text-slate-300 leading-relaxed">
-          {pronunciationData.overallScore >= 80 
+          {pronunciationData.pronunciationScore >= 80 
             ? "Exceptional clarity. Your speech sounds natural and well-structured with minimal phoneme deviations."
-            : pronunciationData.overallScore >= 60
+            : pronunciationData.pronunciationScore >= 60
             ? "Good pronunciation. Focus on the words marked in red to improve specific phoneme accuracy."
             : "Keep practicing. Pay attention to the phonemic breakdown in the words where accuracy was low."}
         </p>
