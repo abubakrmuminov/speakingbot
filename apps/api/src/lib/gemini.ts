@@ -1,45 +1,88 @@
-import { GoogleGenAI, type Part } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { Part } from '@google/generative-ai';
 import { GeminiAnalysisResponseSchema, SessionStartResponseSchema } from '@speaking-coach/shared';
-import type { GeminiAnalysisResponse, GeneratedTopic, ErrorPattern, ReadingPassage, Question } from '@speaking-coach/shared';
+import type { GeminiAnalysisResponse, GeneratedTopic, ErrorPattern, ReadingPassage } from '@speaking-coach/shared';
 import { SCENARIOS } from '@speaking-coach/shared';
 
-const genAI = new GoogleGenAI({ apiKey: process.env['GEMINI_API_KEY'] ?? '' }) as any;
+const genAI = new GoogleGenerativeAI(process.env['GEMINI_API_KEY'] ?? '');
+const GEMINI_MODEL = process.env['GEMINI_MODEL'] ?? 'gemini-2.0-flash-lite';
 
-const ANALYSIS_SYSTEM_INSTRUCTION = `You are an English speaking coach and conversation partner for a Russian-speaking learner at B2–C1 level.
+const ANALYSIS_SYSTEM_INSTRUCTION = `You are an expert English speaking coach, linguist, and examiner. You are working with a Russian-speaking learner.
 
-The user will send you an audio recording of themselves speaking English.
+The user will send you an audio recording. Your goal is to analyze it with extreme precision.
 
-CRITICAL: You must respond ONLY with a valid JSON object. No markdown, no preamble, no explanation outside the JSON.
+CRITICAL: You must provide a VERBATIM transcript. Do NOT "clean up" the speech. If the user mispronounces a word (e.g., "xello" instead of "hello"), transcribe the sound exactly as it was heard if possible, or use the transcript to highlight the error later.
 
 JSON structure:
 {
-  "transcript": "...",
+  "transcript": "Verbatim transcript (e.g., 'Xello, my English is very well'). Do NOT fix errors here.",
   "wordsPerMinute": 0,
   "pauseCount": 0,
   "confidenceLevel": 1-5,
   "errors": [
     {
-      "original": "phrase user said",
-      "corrected": "correct version",
-      "explanation": "объяснение на русском — почему это ошибка и какое правило",
+      "original": "exactly what the user said (with phonetic approximation if needed)",
+      "corrected": "standard English version",
+      "explanation": "Объяснение на русском. Если это произношение, объясните как правильно расположить язык/зубы (phonetic tips).",
       "category": "grammar|vocabulary|pronunciation",
-      "pattern": "Present Perfect vs Past Simple"
+      "pattern": "Specific rule name (e.g., 'H-dropping', '/h/ vs /x/')"
     }
   ],
-  "dialogueReply": "Your natural English reply continuing the conversation (2-4 sentences, end with a question)",
-  "grammarTip": "Pro tip: one insight in English related to what the user said",
-  "topicFeedback": "brief Russian comment on how well the user handled the topic"
+  "dialogueReply": "Natural English reply (2-4 sentences, end with a question). Be encouraging but don't ignore the errors.",
+  "grammarTip": "One specific phonetic or linguistic insight in English based on the user's speech.",
+  "topicFeedback": "Brief Russian feedback on the content and clarity of the speech."
 }
 
 RULES:
-- errors array: max 4 items. Prioritize the most impactful mistakes.
-- If no significant errors, return empty errors array and say so in topicFeedback.
-- dialogueReply: match B2–C1 complexity, be warm and natural, always end with open question.
-- grammarTip: concrete, specific, not generic. Reference what the user actually said.
-- Never be condescending. The user is a high-level adult learner.
-- confidenceLevel: 1=very hesitant, 3=normal, 5=very confident and fluent
-- wordsPerMinute: estimate from audio duration and word count
-- pauseCount: count pauses longer than 1.5 seconds`;
+- Priority: Pronunciation errors are just as important as grammar. Catch them all.
+- Errors array: max 5 items. Prioritize the most "broken" or "non-native" aspects.
+- transcript: Must match what was ACTUALLY said, even if it's ungrammatical or phonetic nonsense.
+- Always include the 'grammar' error 'my English is very well' -> 'very good' if the user said it.
+- Never be condescending. The user wants rigorous, professional feedback.`;
+
+/**
+ * Attempts to repair truncated JSON by adding missing closing braces.
+ */
+function tryRepairJson(json: string): string {
+  let openBraces = 0;
+  let openBrackets = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < json.length; i++) {
+    const char = json[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === '"' && !escaped) {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (char === '{') openBraces++;
+      if (char === '}') openBraces--;
+      if (char === '[') openBrackets++;
+      if (char === ']') openBrackets--;
+    }
+  }
+
+  let repaired = json;
+  if (inString) repaired += '"';
+  while (openBrackets > 0) {
+    repaired += ']';
+    openBrackets--;
+  }
+  while (openBraces > 0) {
+    repaired += '}';
+    openBraces--;
+  }
+  return repaired;
+}
 
 /**
  * Analyses a user's audio recording and returns structured coaching feedback.
@@ -49,8 +92,8 @@ export async function analyzeAudio(
   mimeType: string,
 ): Promise<GeminiAnalysisResponse> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    systemInstruction: ANALYSIS_SYSTEM_INSTRUCTION,
+    model: GEMINI_MODEL,
+    systemInstruction: ANALYSIS_SYSTEM_INSTRUCTION + '\nKeep explanations brief and concise to avoid truncation.',
   });
 
   const audioPart: Part = {
@@ -61,27 +104,45 @@ export async function analyzeAudio(
   };
 
   const textPart: Part = {
-    text: 'Please analyze this English speech recording and respond with the JSON as instructed.',
+    text: 'Analyze the speech and provide JSON. Keep descriptions short.',
   };
 
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [audioPart, textPart] }],
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 2048,
-    },
-  });
+  // 60-second timeout
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+
+  let result;
+  try {
+    result = await model.generateContent({
+      contents: [{ role: 'user', parts: [audioPart, textPart] }],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 4096,
+      },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const rawText = result.response.text();
+  console.log(`[Gemini] Raw response length: ${rawText.length}`);
 
   // Strip possible markdown code fences
-  const jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+  let jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error(`Gemini returned invalid JSON: ${jsonText.slice(0, 200)}`);
+  } catch (err) {
+    console.warn(`[Gemini] Initial parse failed, attempting repair...`);
+    try {
+      jsonText = tryRepairJson(jsonText);
+      parsed = JSON.parse(jsonText);
+      console.info(`[Gemini] JSON repaired successfully.`);
+    } catch (repairErr) {
+      console.error(`[Gemini] Repair failed. Raw text: ${rawText}`);
+      throw new Error(`Gemini returned invalid/truncated JSON: ${jsonText.slice(0, 100)}...`);
+    }
   }
 
   return GeminiAnalysisResponseSchema.parse(parsed);
@@ -92,7 +153,7 @@ export async function analyzeAudio(
  */
 export async function generateTopic(errorPatterns: Pick<ErrorPattern, 'pattern' | 'occurrences'>[]): Promise<GeneratedTopic> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: GEMINI_MODEL,
   });
 
   const topPatterns = errorPatterns
@@ -124,7 +185,7 @@ Rules:
 
   const result = await model.generateContent({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.9, maxOutputTokens: 512 },
+    generationConfig: { temperature: 0.9, maxOutputTokens: 1024 },
   });
 
   const rawText = result.response.text();
@@ -148,7 +209,7 @@ export async function generateReading(
   difficulty: 'B2' | 'C1' = 'B2',
 ): Promise<ReadingPassage> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: GEMINI_MODEL,
   });
 
   const topPatterns = errorPatterns
@@ -214,7 +275,7 @@ export async function evaluateOpenAnswer(
   userAnswer: string,
 ): Promise<{ isCorrect: boolean; score: number; aiExplanation: string }> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: GEMINI_MODEL,
   });
 
   const prompt = `You are an English language examiner.

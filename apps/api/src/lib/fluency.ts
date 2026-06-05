@@ -5,10 +5,11 @@ interface FluencyInput {
   pauseCount: number;
   errorCount: number;
   confidenceLevel: number; // 1–5
+  pronunciationScore?: number | undefined;
 }
 
 /**
- * Calculates fluency score (0–100) from Gemini-provided metrics.
+ * Calculates fluency score (0–100) from Gemini and Azure metrics.
  *
  * Formula:
  *   base = 60
@@ -16,6 +17,7 @@ interface FluencyInput {
  *   + min(wpm - 80, 20)            (speed bonus, capped at +20)
  *   - errorCount * 4               (penalty per error)
  *   - pauseCount * 2               (penalty per long pause >1.5s)
+ *   + (pronScore - 70) * 0.2       (pronunciation influence)
  *   clamped to [0, 100]
  */
 export function calculateFluencyScore({
@@ -23,6 +25,7 @@ export function calculateFluencyScore({
   pauseCount,
   errorCount,
   confidenceLevel,
+  pronunciationScore,
 }: FluencyInput): number {
   const { BASE, CONFIDENCE_MULTIPLIER, SPEED_BONUS_CAP, SPEED_BASELINE_WPM, ERROR_PENALTY, PAUSE_PENALTY } =
     FLUENCY_WEIGHTS;
@@ -32,6 +35,12 @@ export function calculateFluencyScore({
   const errorDeduction = errorCount * ERROR_PENALTY;
   const pauseDeduction = pauseCount * PAUSE_PENALTY;
 
-  const raw = BASE + confidenceBonus + speedBonus - errorDeduction - pauseDeduction;
+  let raw = BASE + confidenceBonus + speedBonus - errorDeduction - pauseDeduction;
+
+  if (pronunciationScore !== undefined) {
+    const pronBonus = (pronunciationScore - 70) * 0.2;
+    raw += pronBonus;
+  }
+
   return Math.max(0, Math.min(100, Math.round(raw)));
 }

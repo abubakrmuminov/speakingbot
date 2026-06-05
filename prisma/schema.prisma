@@ -55,6 +55,10 @@ model Session {
   errorCount     Int
   confidenceLevel Int @default(3)
 
+  // New fields for pronunciation
+  pronunciationScore    Int?      // общий score 0–100
+  pronunciationData     Json?     // детальный разбор по словам и фонемам
+
   createdAt DateTime @default(now())
 
   @@index([userId])

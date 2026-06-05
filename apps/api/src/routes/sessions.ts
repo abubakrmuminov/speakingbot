@@ -4,7 +4,8 @@ import { analyzeAudio, generateTopic } from '../lib/gemini.js';
 import { calculateFluencyScore } from '../lib/fluency.js';
 import { updateStreak } from '../lib/streak.js';
 import { checkMilestones } from '../lib/milestones.js';
-import { SessionListQuerySchema } from '@speaking-coach/shared';
+import { assessPronunciation, convertToWav } from '../lib/azure-speech.js';
+import { SessionListQuerySchema, type PronunciationWord, type PronunciationPhoneme } from '@speaking-coach/shared';
 import type { MultipartFile } from '@fastify/multipart';
 
 export async function sessionRoutes(fastify: FastifyInstance) {
@@ -32,8 +33,10 @@ export async function sessionRoutes(fastify: FastifyInstance) {
   // ─── POST /sessions/process ───────────────────────────────────
   fastify.post('/sessions/process', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const userId = request.user.id;
+    fastify.log.info({ userId }, '[process] Request received');
 
-    let file: MultipartFile | undefined;
+    let audioBuffer: Buffer | undefined;
+    let mimeType = 'audio/webm';
     let topic = '';
     let scenario = '';
 
@@ -41,49 +44,125 @@ export async function sessionRoutes(fastify: FastifyInstance) {
       const parts = request.parts();
       for await (const part of parts) {
         if (part.type === 'file' && part.fieldname === 'audio') {
-          file = part;
+          fastify.log.info({ mimeType: part.mimetype, filename: part.filename }, '[process] Consuming audio part');
+          const chunks: Buffer[] = [];
+          for await (const chunk of part.file) {
+            chunks.push(chunk as Buffer);
+          }
+          audioBuffer = Buffer.concat(chunks);
+          mimeType = part.mimetype || 'audio/webm';
+          fastify.log.info({ sizeKB: Math.round(audioBuffer.length / 1024) }, '[process] Audio buffered');
         } else if (part.type === 'field') {
           if (part.fieldname === 'topic') topic = String(part.value);
           if (part.fieldname === 'scenario') scenario = String(part.value);
         }
       }
-    } catch {
+      fastify.log.info({ hasAudio: !!audioBuffer, topic, scenario }, '[process] Multipart processing finished');
+    } catch (err) {
+      fastify.log.error({ err }, '[process] Failed to parse multipart');
       return reply.status(400).send({ error: 'Failed to parse multipart form data.' });
     }
 
-    if (!file) return reply.status(400).send({ error: 'Audio file is required.' });
-    if (!topic || !scenario) return reply.status(400).send({ error: 'topic and scenario fields are required.' });
-
-    // Read audio into buffer (and immediately release)
-    const chunks: Buffer[] = [];
-    for await (const chunk of file.file) {
-      chunks.push(chunk as Buffer);
+    if (!audioBuffer) {
+      fastify.log.warn('[process] No audio data received');
+      return reply.status(400).send({ error: 'Audio file is required.' });
     }
-    const audioBuffer = Buffer.concat(chunks);
-    const mimeType = file.mimetype || 'audio/webm';
+    if (!topic || !scenario) {
+      fastify.log.warn({ topic, scenario }, '[process] Missing fields');
+      return reply.status(400).send({ error: 'topic and scenario fields are required.' });
+    }
 
-    // Call Gemini
-    let analysis;
+    fastify.log.info(
+      { sizeKB: Math.round(audioBuffer.length / 1024), mimeType, topic, scenario },
+      '[process] Data ready — starting parallel analysis',
+    );
+
+    const t0 = Date.now();
+    let wavBuffer: Buffer | undefined;
     try {
-      analysis = await analyzeAudio(audioBuffer, mimeType);
+      wavBuffer = await convertToWav(audioBuffer);
     } catch (err) {
-      fastify.log.error(err, 'Gemini analysis failed');
+      fastify.log.warn({ err }, '[process] WAV conversion failed — pronunciation assessment will be skipped');
+    }
+
+    // Azure + Gemini in parallel
+    const [geminiResult, pronResult] = await Promise.allSettled([
+      analyzeAudio(audioBuffer, mimeType),
+      wavBuffer ? assessPronunciation(wavBuffer, topic) : Promise.reject(new Error('No wav buffer')),
+    ]);
+
+    const analysis = geminiResult.status === 'fulfilled' ? geminiResult.value : null;
+    const pronunciation = pronResult.status === 'fulfilled' ? pronResult.value : null;
+
+    if (!analysis && !pronunciation) {
+      fastify.log.error({ 
+        geminiError: (geminiResult as any).reason,
+        azureError: (pronResult as any).reason
+      }, '[process] BOTH Gemini and Azure FAILED');
       return reply.status(503).send({
-        error: 'AI analysis failed. Please check your audio and try again.',
+        error: 'Analysis failed. Please try again later.',
       });
     }
 
-    const errorCount = analysis.errors.length;
+    fastify.log.info(
+      { 
+        ms: Date.now() - t0, 
+        geminiOk: !!analysis, 
+        azureOk: !!pronunciation 
+      },
+      '[process] Analysis complete',
+    );
+
+    // Fallback if Gemini fails but Azure succeeded
+    const finalTranscript = analysis?.transcript || pronunciation?.transcript || '';
+    const finalWpm = analysis?.wordsPerMinute || 0;
+    const finalPauseCount = analysis?.pauseCount || 0;
+    const finalConfidence = analysis?.confidenceLevel || 3;
+    const finalErrors = analysis?.errors || [];
+
+    const errorCount = finalErrors.length;
     const fluencyScore = calculateFluencyScore({
-      wordsPerMinute: analysis.wordsPerMinute,
-      pauseCount: analysis.pauseCount,
+      wordsPerMinute: finalWpm,
+      pauseCount: finalPauseCount,
       errorCount,
-      confidenceLevel: analysis.confidenceLevel,
+      confidenceLevel: finalConfidence,
+      pronunciationScore: pronunciation?.pronunciationScore,
     });
 
-    // Estimate session duration from WPM (rough: avg 130 wpm → ~5 min)
-    const estimatedMinutes = Math.max(1, Math.round(analysis.wordsPerMinute > 0
-      ? (analysis.transcript.split(/\s+/).length / analysis.wordsPerMinute)
+    // Estimate session duration
+    const estimatedMinutes = Math.max(1, Math.round(finalWpm > 0
+      ? (finalTranscript.split(/\s+/).length / finalWpm)
+      : 3));
+
+    const pronErrors = pronunciation?.words
+      .filter((w: PronunciationWord) => w.errorType === 'Mispronunciation' && w.accuracyScore < 80)
+      .map((w: PronunciationWord) => ({
+        category: 'pronunciation' as const,
+        pattern: `Pronunciation: "${w.word}" (${
+          w.phonemes
+            .filter((p: PronunciationPhoneme) => !p.isCorrect)
+            .map((p: PronunciationPhoneme) => `/${p.phoneme}/`)
+            .join(', ')
+        })`,
+        original: w.word,
+        corrected: w.word,
+        explanation: `Azure detected mispronunciation on specific phonemes. Overall word accuracy: ${w.accuracyScore}%`,
+      })) ?? [];
+
+    const mergedErrors = [...finalErrors, ...pronErrors];
+    const errorCount = mergedErrors.length;
+
+    const fluencyScore = calculateFluencyScore({
+      wordsPerMinute: finalWpm,
+      pauseCount: finalPauseCount,
+      errorCount,
+      confidenceLevel: finalConfidence,
+      pronunciationScore: pronunciation?.overallScore,
+    });
+
+    // Estimate session duration
+    const estimatedMinutes = Math.max(1, Math.round(finalWpm > 0
+      ? (finalTranscript.split(/\s+/).length / finalWpm)
       : 3));
 
     // Persist everything in parallel
@@ -93,26 +172,45 @@ export async function sessionRoutes(fastify: FastifyInstance) {
           userId,
           topic,
           scenario,
-          transcript: analysis.transcript,
-          errorAnalysis: analysis.errors as any,
-          dialogueReply: analysis.dialogueReply,
-          grammarTip: analysis.grammarTip,
-          topicFeedback: analysis.topicFeedback,
+          transcript: finalTranscript,
+          errorAnalysis: mergedErrors as any,
+          dialogueReply: analysis?.dialogueReply || "I've analyzed your pronunciation, but I'm currently unable to provide grammar feedback. Please try again in a few minutes.",
+          grammarTip: analysis?.grammarTip || "Check back later for grammar tips!",
+          topicFeedback: analysis?.topicFeedback || "",
           fluencyScore,
-          wordsPerMinute: analysis.wordsPerMinute,
-          pauseCount: analysis.pauseCount,
+          wordsPerMinute: finalWpm,
+          pauseCount: finalPauseCount,
           errorCount,
-          confidenceLevel: analysis.confidenceLevel,
+          confidenceLevel: finalConfidence,
+          pronunciationScore: pronunciation?.pronunciationScore ?? null,
+          pronunciationData: pronunciation as any ?? null,
         },
       }),
       // Upsert each error pattern
-      ...analysis.errors.map((e) =>
+      ...mergedErrors.map((e) =>
         prisma.errorPattern.upsert({
           where: { userId_pattern: { userId, pattern: e.pattern } },
           create: {
             userId,
             category: e.category,
             pattern: e.pattern,
+            occurrences: 1,
+          },
+          update: {
+            occurrences: { increment: 1 },
+            lastSeen: new Date(),
+            resolved: false,
+          },
+        }),
+      ),
+      // Upsert each Pronunciation error
+      ...pronErrors.map((pe: { category: "pronunciation"; pattern: string }) =>
+        prisma.errorPattern.upsert({
+          where: { userId_pattern: { userId, pattern: pe.pattern } },
+          create: {
+            userId,
+            category: pe.category,
+            pattern: pe.pattern,
             occurrences: 1,
           },
           update: {
@@ -131,12 +229,15 @@ export async function sessionRoutes(fastify: FastifyInstance) {
       return [] as string[];
     });
 
+    fastify.log.info({ userId, sessionId: session.id, milestonesCount: newMilestones.length }, '[process] Success — sending response');
+
     return reply.send({
       session: {
         ...session,
         createdAt: session.createdAt.toISOString(),
       },
       newMilestones,
+      pronunciation: pronunciation ?? null,
     });
   });
 

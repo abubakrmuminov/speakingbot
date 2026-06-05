@@ -9,6 +9,7 @@ import History from './pages/History';
 import Progress from './pages/Progress';
 import Milestones from './pages/Milestones';
 import Reading from './pages/Reading';
+import PronunciationDetail from './pages/PronunciationDetail';
 import TelegramGuard from './components/TelegramGuard';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/session" element={<Session />} />
           <Route path="/session/:id" element={<SessionDetail />} />
+          <Route path="/session/:id/pronunciation" element={<PronunciationDetail />} />
           <Route path="/reading" element={<Reading />} />
           <Route path="/history" element={<History />} />
           <Route path="/progress" element={<Progress />} />

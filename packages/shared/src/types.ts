@@ -38,6 +38,8 @@ export interface Session {
   pauseCount: number | null;
   errorCount: number;
   confidenceLevel: number;
+  pronunciationScore: number | null;
+  pronunciationData: PronunciationResult | null;
   createdAt: string;
 }
 
@@ -162,4 +164,29 @@ export interface ReadingSession {
   readingScore: number;
   timeSpentSeconds: number | null;
   createdAt: string;
+}
+
+// ─── Pronunciation ─────────────────────────────────────────────────────────
+
+export interface PronunciationPhoneme {
+  phoneme: string;        // IPA symbol, e.g., "θ", "æ", "ɪ"
+  accuracyScore: number;  // 0–100
+  isCorrect: boolean;     // accuracyScore >= 60
+}
+
+export interface PronunciationWord {
+  word: string;
+  accuracyScore: number;       // 0–100
+  errorType: 'None' | 'Omission' | 'Insertion' | 'Mispronunciation';
+  phonemes: PronunciationPhoneme[];
+  syllables?: string[];        // syllable breakdown
+}
+
+export interface PronunciationResult {
+  pronunciationScore: number;  // 0–100 total
+  accuracyScore: number;       // pronunciation accuracy
+  fluencyScore: number;        // fluency (pauses, rhythm)
+  completenessScore: number;   // how many words spoken
+  words: PronunciationWord[];
+  transcript: string;          // Azure-recognized transcript
 }

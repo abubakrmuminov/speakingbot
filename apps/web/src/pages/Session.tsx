@@ -252,6 +252,7 @@ export default function Session() {
 
   // ─── Render: Results ─────────────
   if (phase === 'results' && result) {
+    console.log('[Results] Session data:', result);
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-5 pb-24 md:pb-8">
         {/* New Milestones */}
@@ -285,6 +286,24 @@ export default function Session() {
             </p>
           )}
         </div>
+
+        {/* Pronunciation Summary */}
+        {result.pronunciationScore !== null && (
+          <div className="card animate-fade-up delay-75 border-brand-500/20 bg-brand-500/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Pronunciation Accuracy</div>
+                <div className="text-3xl font-bold font-serif text-brand-300">{result.pronunciationScore}%</div>
+              </div>
+              <button
+                className="btn-secondary py-2 px-4 text-sm"
+                onClick={() => navigate(`/session/${result.id}/pronunciation`)}
+              >
+                Detailed Analysis →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Errors */}
         {result.errorAnalysis.length > 0 ? (
