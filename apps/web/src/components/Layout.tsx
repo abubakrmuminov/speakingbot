@@ -1,92 +1,60 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useTheme } from '../hooks/useTheme';
+import { PageMetaProvider } from './PageMetaProvider';
+import { usePageMetaState } from '../hooks/usePageMeta';
+import Header from './Header';
+import BottomNav from './BottomNav';
 
-const NAV = [
-  { to: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { to: '/session', label: 'Practice', icon: '🎙' },
-  { to: '/reading', label: 'Reading', icon: '📖' },
-  { to: '/history', label: 'History', icon: '📋' },
-  { to: '/progress', label: 'Progress', icon: '📈' },
-  { to: '/milestones', label: 'Achievements', icon: '🏆' },
-];
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/reading': 'Reading',
+  '/history': 'History',
+  '/progress': 'Progress',
+  '/milestones': 'Milestones',
+  '/profile': 'Profile',
+};
 
-export default function Layout() {
-  const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
-  const navigate = useNavigate();
+const NO_BOTTOM_NAV = ['/session'];
+const NO_HEADER: string[] = [];
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+function getTitle(pathname: string): string {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  if (pathname.startsWith('/session/') && pathname.endsWith('/pronunciation')) return 'Pronunciation';
+  return '';
+}
+
+function LayoutInner() {
+  useTheme();
+  const { pathname } = useLocation();
+  const pageMeta = usePageMetaState();
+
+  const isSessionSubRoute = pathname.startsWith('/session/');
+
+  const hideBottomNav =
+    NO_BOTTOM_NAV.some((p) => pathname === p || pathname.startsWith(p + '/')) ||
+    isSessionSubRoute;
+
+  const title = pageMeta.title ?? getTitle(pathname);
+  const showHeader = !pageMeta.hideHeader && !NO_HEADER.includes(pathname) && !!title && !isSessionSubRoute;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top Nav */}
-      <header className="sticky top-0 z-50 border-b border-surface-border bg-surface/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎙</span>
-            <span className="font-bold text-lg gradient-text">SpeakAI</span>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `btn-ghost text-sm flex items-center gap-2 ${isActive ? 'text-white bg-surface-elevated' : ''}`
-                }
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 pr-3 border-r border-surface-border hidden sm:flex">
-              {user?.photoUrl ? (
-                <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full border border-brand-500/30" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-surface-elevated flex items-center justify-center text-xs">
-                  {user?.name?.[0] ?? 'U'}
-                </div>
-              )}
-              <span className="text-sm text-slate-300 font-medium">{user?.name ?? 'User'}</span>
-            </div>
-            <button onClick={handleLogout} className="btn-ghost text-xs text-slate-400">
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
-        <Outlet />
-      </main>
-
-      {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-surface-border bg-surface/90 backdrop-blur-xl z-50">
-        <div className="flex">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex-1 flex flex-col items-center justify-center py-3 text-xs gap-1 transition-colors ${
-                  isActive ? 'text-brand-400' : 'text-slate-500'
-                }`
-              }
-            >
-              <span className="text-xl">{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+    <div className="app-shell">
+      <div className="app-column">
+        {showHeader && <Header title={title} />}
+        <main className={hideBottomNav ? 'page-content-no-nav' : 'page-content'}>
+          <Outlet />
+        </main>
+        {!hideBottomNav && <BottomNav />}
+      </div>
+      <div className="hidden md:block fixed inset-0 -z-10 bg-bg-subtle" aria-hidden />
     </div>
+  );
+}
+
+export default function Layout() {
+  return (
+    <PageMetaProvider>
+      <LayoutInner />
+    </PageMetaProvider>
   );
 }

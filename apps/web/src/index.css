@@ -4,156 +4,283 @@
 
 @layer base {
   :root {
+    --color-bg: #ffffff;
+    --color-bg-subtle: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-line: #e8eaed;
+    --color-text-primary: #1a1a2e;
+    --color-text-secondary: #5f6368;
+    --color-accent: #1a73e8;
+    color-scheme: light;
+  }
+
+  [data-theme='dark'] {
+    --color-bg: #0f0f0f;
+    --color-bg-subtle: #141414;
+    --color-surface: #1a1a1a;
+    --color-line: #2a2a2a;
+    --color-text-primary: #f1f1f1;
+    --color-text-secondary: #8a8a8a;
     color-scheme: dark;
   }
 
   html {
-    @apply bg-surface text-white antialiased;
+    @apply bg-bg text-text-primary antialiased;
     scroll-behavior: smooth;
   }
 
   body {
     @apply min-h-screen font-sans;
-    background: radial-gradient(
-      ellipse 80% 50% at 50% -20%,
-      rgba(47, 95, 245, 0.15),
-      transparent
-    );
   }
 
   * {
-    @apply border-surface-border;
+    border-color: var(--color-line);
   }
 }
 
 @layer components {
-  .card {
-    @apply bg-surface-card rounded-2xl border border-surface-border p-6 shadow-xl;
-    backdrop-filter: blur(12px);
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 0.5px solid rgba(255, 255, 255, 0.8);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 -1px 0 rgba(0, 0, 0, 0.04) inset,
+      0 8px 32px rgba(0, 0, 0, 0.08);
   }
 
-  .card-elevated {
-    @apply bg-surface-elevated rounded-2xl border border-surface-border p-6 shadow-2xl;
+  [data-theme='dark'] .liquid-glass {
+    background: rgba(20, 20, 20, 0.7);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .app-shell {
+    @apply min-h-screen flex flex-col;
+    background: var(--color-bg);
+  }
+
+  .app-column {
+    @apply w-full max-w-[480px] mx-auto flex flex-col flex-1;
+    background: var(--color-bg);
+  }
+
+  .page-content {
+    @apply flex-1 px-4 py-4;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .page-content-no-nav {
+    @apply flex-1 px-4 py-4;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .card {
+    @apply rounded-card border p-4;
+    background: var(--color-surface);
+    border-color: var(--color-line);
+  }
+
+  .card-liquid {
+    @apply card liquid-glass;
+  }
+
+  .card-error {
+    @apply card;
+    background: color-mix(in srgb, #d93025 6%, var(--color-surface));
+    border-color: color-mix(in srgb, #d93025 20%, var(--color-line));
+  }
+
+  .card-success {
+    @apply card;
+    background: color-mix(in srgb, #34a853 6%, var(--color-surface));
+    border-color: color-mix(in srgb, #34a853 20%, var(--color-line));
+  }
+
+  .card-warning {
+    @apply card;
+    background: color-mix(in srgb, #f9ab00 8%, var(--color-surface));
+    border-color: color-mix(in srgb, #f9ab00 25%, var(--color-line));
+  }
+
+  .card-accent {
+    @apply card;
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--color-accent) 25%, var(--color-line));
+  }
+
+  .card-tip {
+    @apply card;
+    border-left: 3px solid var(--color-accent);
   }
 
   .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-semibold
-           px-6 py-3 rounded-xl transition-all duration-150 disabled:opacity-50
-           disabled:cursor-not-allowed shadow-lg shadow-brand-500/25;
+    @apply w-full font-medium text-white px-6 py-3 rounded-xl transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+    background: var(--color-accent);
+  }
+
+  .btn-primary:not(:disabled):hover {
+    background: #1557b0;
   }
 
   .btn-secondary {
-    @apply bg-surface-elevated hover:bg-surface-border text-white font-medium
-           px-6 py-3 rounded-xl border border-surface-border transition-all duration-150
-           active:scale-95;
+    @apply w-full font-medium px-6 py-3 rounded-xl border transition-all duration-150 active:scale-[0.98];
+    background: var(--color-surface);
+    border-color: var(--color-line);
+    color: var(--color-text-primary);
+  }
+
+  .btn-secondary:not(:disabled):hover {
+    background: var(--color-bg-subtle);
   }
 
   .btn-ghost {
-    @apply hover:bg-surface-elevated text-slate-400 hover:text-white font-medium
-           px-4 py-2 rounded-xl transition-all duration-150;
+    @apply font-medium px-4 py-2 rounded-xl transition-all duration-150;
+    color: var(--color-text-secondary);
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-primary);
+  }
+
+  .btn-icon {
+    @apply w-10 h-10 rounded-full flex items-center justify-center liquid-glass transition-all active:scale-95;
+    color: var(--color-text-primary);
+  }
+
+  .section-label {
+    @apply text-[11px] uppercase tracking-wider font-medium;
+    color: var(--color-text-secondary);
+  }
+
+  .divider {
+    @apply border-t;
+    border-color: var(--color-line);
+  }
+
+  .list-item {
+    @apply py-3 border-b last:border-b-0;
+    border-color: var(--color-line);
   }
 
   .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
   }
 
-  .badge-blue {
-    @apply bg-brand-500/20 text-brand-300;
+  .badge-accent {
+    @apply badge;
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    color: var(--color-accent);
   }
+
+  .badge-neutral {
+    @apply badge;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-secondary);
+  }
+
   .badge-green {
-    @apply bg-emerald-500/20 text-emerald-300;
-  }
-  .badge-red {
-    @apply bg-red-500/20 text-red-300;
-  }
-  .badge-amber {
-    @apply bg-amber-500/20 text-amber-300;
+    @apply badge;
+    background: color-mix(in srgb, #34a853 15%, transparent);
+    color: #34a853;
   }
 
-  .input {
-    @apply w-full bg-surface-elevated border border-surface-border rounded-xl px-4 py-3
-           text-white placeholder-slate-500 focus:outline-none focus:ring-2
-           focus:ring-brand-500/50 focus:border-brand-500 transition-all;
+  .badge-gray {
+    @apply badge;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-secondary);
   }
 
-  /* Animated score counter */
+  .input,
+  .textarea {
+    @apply w-full rounded-xl px-4 py-3 border transition-all focus:outline-none focus:ring-2;
+    background: var(--color-surface);
+    border-color: var(--color-line);
+    color: var(--color-text-primary);
+    focus-ring-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  .input:focus,
+  .textarea:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+
+  .input::placeholder,
+  .textarea::placeholder {
+    color: var(--color-text-secondary);
+  }
+
+  .toggle-btn {
+    @apply px-5 py-2 rounded-xl text-sm font-medium border transition-all;
+    border-color: var(--color-line);
+    color: var(--color-text-secondary);
+  }
+
+  .toggle-btn-active {
+    @apply toggle-btn;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .progress-bar {
+    @apply h-1.5 rounded-full overflow-hidden;
+    background: var(--color-line);
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+    background: var(--color-accent);
+  }
+
+  .skeleton {
+    @apply rounded-lg animate-pulse;
+    background: var(--color-line);
+  }
+
   .score-number {
-    font-feature-settings: "tnum";
+    font-feature-settings: 'tnum';
     font-variant-numeric: tabular-nums;
   }
 
-  /* Waveform bars */
-  .waveform-bar {
-    @apply w-1 bg-brand-400 rounded-full;
-    animation: wave 0.5s ease-in-out infinite alternate;
+  .mic-recording {
+    animation: micPulse 1.5s ease-in-out infinite;
   }
 
-  .waveform-bar:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  .waveform-bar:nth-child(3) {
-    animation-delay: 0.2s;
-  }
-  .waveform-bar:nth-child(4) {
-    animation-delay: 0.3s;
-  }
-  .waveform-bar:nth-child(5) {
-    animation-delay: 0.15s;
-  }
-  .waveform-bar:nth-child(6) {
-    animation-delay: 0.05s;
-  }
-  .waveform-bar:nth-child(7) {
-    animation-delay: 0.25s;
+  .result-card {
+    animation: fadeInUp 0.25s ease forwards;
+    opacity: 0;
   }
 
-  /* Mic pulse ring */
-  .mic-pulse::before {
-    content: "";
-    @apply absolute inset-0 rounded-full bg-brand-500/30;
-    animation: pulseRing 1.5s ease-out infinite;
-  }
+  .result-card:nth-child(1) { animation-delay: 0ms; }
+  .result-card:nth-child(2) { animation-delay: 80ms; }
+  .result-card:nth-child(3) { animation-delay: 160ms; }
+  .result-card:nth-child(4) { animation-delay: 240ms; }
+  .result-card:nth-child(5) { animation-delay: 320ms; }
 
-  /* Animated gradient text */
-  .gradient-text {
-    background: linear-gradient(135deg, #5384ff, #a78bfa, #38bdf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
   }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-surface;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-surface-border rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-600;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 4px;
   }
 }
 
-/* Staggered fade-up animations for results */
-.animate-fade-up {
-  animation: fadeUp 0.4s ease-out forwards;
-  opacity: 0;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.delay-100 {
-  animation-delay: 0.1s;
-}
-.delay-200 {
-  animation-delay: 0.2s;
-}
-.delay-300 {
-  animation-delay: 0.3s;
-}
-.delay-400 {
-  animation-delay: 0.4s;
-}
-.delay-500 {
-  animation-delay: 0.5s;
+
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(217, 48, 37, 0.35); }
+  50% { box-shadow: 0 4px 28px rgba(217, 48, 37, 0.65); }
 }

@@ -1,41 +1,44 @@
-import React, { ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { useTheme } from '../hooks/useTheme';
+import { useToast } from './Toast';
 
-/**
- * Ensures the app is only accessible within the Telegram WebApp environment.
- * Shows a lock screen if accessed via a regular browser.
- */
 interface TelegramGuardProps {
   children: ReactNode;
 }
 
 export default function TelegramGuard({ children }: TelegramGuardProps) {
-  // Check for Telegram WebApp environment
+  useTheme();
+  const { showToast } = useToast();
+
   const isTelegram = Boolean(
     (window as any).Telegram?.WebApp?.initData &&
-    (window as any).Telegram?.WebApp?.initData?.length > 0
+    (window as any).Telegram?.WebApp?.initData?.length > 0,
   );
 
   const botUsername = import.meta.env.VITE_BOT_USERNAME || '@your_bot_username';
 
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(botUsername);
+    showToast('Copied!', 'success');
+  };
+
   if (!isTelegram && import.meta.env.PROD) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-surface flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-xs w-full glass p-10 rounded-3xl flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
-          <div className="text-6xl animate-bounce">📱</div>
-          <h1 className="text-2xl font-bold gradient-text">Telegram Only</h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            This application is a specialized English Coach designed to run exclusively inside Telegram.
+      <div className="app-shell min-h-screen">
+        <div className="app-column min-h-screen flex flex-col items-center justify-center px-6 text-center">
+          <span className="text-[64px] mb-6">📱</span>
+          <h1 className="font-serif text-[22px] text-text-primary mb-3">Open in Telegram</h1>
+          <p className="text-[15px] text-text-secondary leading-relaxed max-w-xs mb-8">
+            This app only works inside Telegram Mini App
           </p>
-          <div className="w-full bg-surface-elevated/50 p-4 rounded-xl border border-surface-border">
-            <p className="text-xs text-slate-500 mb-1">Open it via our bot:</p>
-            <p className="font-mono text-brand-400 font-bold">{botUsername}</p>
-          </div>
-          <a 
-            href={`https://t.me/${botUsername.replace('@', '')}`}
-            className="btn-primary w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2"
+          <p className="text-[13px] text-text-secondary mb-1">Find the bot:</p>
+          <button
+            type="button"
+            onClick={() => void handleCopy()}
+            className="text-[15px] text-accent font-medium mb-8"
           >
-            <span>✈️</span> Open in Telegram
-          </a>
+            {botUsername}
+          </button>
         </div>
       </div>
     );

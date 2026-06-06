@@ -1,34 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { ReadingPassage, ReadingResult, UserAnswer } from '@speaking-coach/shared';
+import { usePageMeta } from '../hooks/usePageMeta';
+import Header from '../components/Header';
+import type { ReadingResult } from '@speaking-coach/shared';
 
 type State = 'intro' | 'loading' | 'reading' | 'results';
 
 export default function Reading() {
+  const navigate = useNavigate();
   const [state, setState] = useState<State>('intro');
   const [difficulty, setDifficulty] = useState<'B2' | 'C1'>('B2');
   const [session, setSession] = useState<any>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [results, setResults] = useState<ReadingResult | null>(null);
+  const [openAccordion, setOpenAccordion] = useState<Record<string, boolean>>({});
 
-  // 1. Generate Session
+  usePageMeta({
+    title: 'Reading',
+    hideHeader: state === 'results',
+  });
+
   const generateMutation = useMutation({
     mutationFn: (diff: 'B2' | 'C1') => api.reading.generate(diff),
     onSuccess: (data) => {
       setSession(data);
       setState('reading');
-    }
+    },
   });
 
-  // 2. Submit Answers
   const submitMutation = useMutation({
-    mutationFn: (data: { sessionId: string; answers: { questionId: string; answer: string }[] }) => 
+    mutationFn: (data: { sessionId: string; answers: { questionId: string; answer: string }[] }) =>
       api.reading.submit(data.sessionId, data.answers),
     onSuccess: (data) => {
       setResults(data);
       setState('results');
-    }
+    },
   });
 
   const handleStart = () => {
@@ -40,127 +48,141 @@ export default function Reading() {
     if (!session) return;
     const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
       questionId,
-      answer
+      answer,
     }));
-    submitMutation.mutate({
-      sessionId: session.sessionId,
-      answers: formattedAnswers
-    });
+    submitMutation.mutate({ sessionId: session.sessionId, answers: formattedAnswers });
   };
 
-  const isAllAnswered = (session?.questions || []).every((q: any) => (answers[q.id]?.trim()?.length ?? 0) > 0);
+  const totalQuestions = session?.questions?.length ?? 8;
+  const answeredCount = (session?.questions ?? []).filter(
+    (q: any) => (answers[q.id]?.trim()?.length ?? 0) > 0,
+  ).length;
+  const isAllAnswered = answeredCount === totalQuestions;
 
-  // ─── STAGE: Intro ───────────────────────────────────────────
+  const getQuestionTypeLabel = (q: any) => {
+    if (q.type === 'true_false_ng') return 'True / False / NG';
+    if (q.type === 'open') return 'Open question';
+    return 'Multiple choice';
+  };
+
   if (state === 'intro') {
     return (
-      <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="glass p-10 rounded-3xl space-y-6 text-center">
-          <div className="text-6xl">📖</div>
-          <h1 className="text-4xl font-bold gradient-text">Reading Practice</h1>
-          <p className="text-slate-400 text-lg leading-relaxed">
-            Master academic English with IELTS/TOEFL style passages. 
-            Detailed explanations and AI-driven feedback for open questions.
-          </p>
-          <div className="flex justify-center gap-6 py-4">
-             {['B2', 'C1'].map((d) => (
-               <button
-                 key={d}
-                 onClick={() => setDifficulty(d as any)}
-                 className={`px-8 py-3 rounded-xl font-bold transition-all ${
-                   difficulty === d 
-                     ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 scale-105' 
-                     : 'bg-surface-elevated text-slate-400 hover:text-white'
-                 }`}
-               >
-                 {d}
-               </button>
-             ))}
-          </div>
-          <button 
-            onClick={handleStart}
-            className="btn-primary w-full py-4 text-lg font-bold rounded-2xl"
-          >
-            Generate Passage
-          </button>
+      <div className="space-y-6">
+        <div className="text-center pt-4">
+          <span className="text-5xl">📖</span>
+          <h2 className="font-serif text-2xl text-text-primary mt-4">Reading Practice</h2>
+          <p className="text-[13px] text-text-secondary mt-1">IELTS · TOEFL style</p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { label: '8 Questions', sub: 'Varied types', icon: '📝' },
-            { label: 'Academic', sub: 'Text focused', icon: '🏛' },
-            { label: 'AI Feedback', sub: 'Detailed answers', icon: '🤖' }
-          ].map((feat, i) => (
-            <div key={i} className="glass p-6 rounded-2xl flex items-center gap-4">
-              <span className="text-2xl">{feat.icon}</span>
-              <div>
-                <p className="font-bold text-sm">{feat.label}</p>
-                <p className="text-xs text-slate-500">{feat.sub}</p>
-              </div>
-            </div>
+
+        <div className="divider" />
+
+        <ul className="space-y-3">
+          {['8 questions per session', 'Detailed explanations', 'Tracks your progress'].map((item) => (
+            <li key={item} className="flex items-center gap-3 text-[15px] text-text-primary">
+              <span className="w-5 h-5 rounded-full border border-line flex items-center justify-center text-[10px] text-text-secondary">○</span>
+              {item}
+            </li>
           ))}
+        </ul>
+
+        <div className="divider" />
+
+        <div>
+          <p className="section-label mb-3">Difficulty</p>
+          <div className="flex gap-2">
+            {(['B2', 'C1'] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDifficulty(d)}
+                className={difficulty === d ? 'toggle-btn-active' : 'toggle-btn'}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
         </div>
+
+        <button type="button" onClick={handleStart} className="btn-primary">
+          Generate Passage
+        </button>
       </div>
     );
   }
 
-  // ─── STAGE: Loading ──────────────────────────────────────────
   if (state === 'loading') {
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="h-10 w-48 bg-surface-elevated rounded-lg animate-pulse" />
-        <div className="space-y-4">
-          <div className="h-64 w-full bg-surface-elevated rounded-3xl animate-pulse" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(4)].map((_, i) => (
-               <div key={i} className="h-32 bg-surface-elevated rounded-2xl animate-pulse" />
-            ))}
-          </div>
+      <div className="space-y-4 animate-fade-up">
+        <div className="skeleton h-6 w-48" />
+        <div className="skeleton h-4 w-32" />
+        <div className="space-y-2 mt-6">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="skeleton h-4 w-full" />
+          ))}
+          <div className="skeleton h-4 w-3/4" />
         </div>
-        <p className="text-center text-slate-500 animate-bounce">Gemini is curating your academic passage...</p>
+        <p className="text-[13px] text-text-secondary text-center mt-8">Generating your passage...</p>
       </div>
     );
   }
 
-  // ─── STAGE: Reading ──────────────────────────────────────────
   if (state === 'reading' && session) {
     return (
-      <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-2 gap-8 items-start relative px-4 pb-24 lg:pb-8">
-        {/* Left: Passage */}
-        <div className="lg:sticky lg:top-24 space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold gradient-text">{session.topic}</h2>
-            <span className="badge-brand">{session.difficulty}</span>
-          </div>
-          <div className="glass p-8 rounded-3xl max-h-[60vh] lg:max-h-[75vh] overflow-y-auto custom-scrollbar leading-relaxed text-slate-300">
-            {session.passage.split('\n').map((p: string, i: number) => (
-              <p key={i} className="mb-4">{p}</p>
-            ))}
-          </div>
+      <div className="space-y-4 -mt-2">
+        <div className="flex items-center justify-end -mb-2">
+          <span className="badge-accent">{session.difficulty}</span>
         </div>
 
-        {/* Right: Questions */}
-        <div className="space-y-8 mt-8 lg:mt-12">
-          {session.questions.map((q: any, i: number) => (
-            <div key={q.id} className="glass p-6 rounded-2xl space-y-4 border border-surface-border/50">
-              <div className="flex gap-3">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-surface-elevated flex items-center justify-center text-sm font-bold text-brand-400">
-                  {i + 1}
-                </span>
-                <p className="font-medium text-slate-200">{q.question}</p>
-              </div>
+        <h2 className="font-serif text-xl text-text-primary">{session.topic}</h2>
 
-              {/* Multiple Choice / TFNG */}
-              {q.options && (
-                <div className="grid gap-2 ml-11">
+        <div className="text-[15px] text-text-primary leading-[1.8] max-h-[40vh] overflow-y-auto custom-scrollbar">
+          {session.passage.split('\n').map((p: string, i: number) => (
+            <p key={i} className="mb-4">{p}</p>
+          ))}
+        </div>
+
+        <div className="relative flex items-center py-2">
+          <div className="divider flex-1" />
+          <span className="px-3 text-[13px] text-text-secondary">Questions</span>
+          <div className="divider flex-1" />
+        </div>
+
+        <div className="space-y-4">
+          {session.questions.map((q: any, i: number) => (
+            <div key={q.id} className="card">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="badge-neutral">{i + 1}</span>
+                <span className="text-[13px] text-text-secondary">{getQuestionTypeLabel(q)}</span>
+              </div>
+              <p className="text-[15px] text-text-primary mb-3">{q.question}</p>
+
+              {q.options && q.type !== 'true_false_ng' && (
+                <div className="space-y-2">
                   {q.options.map((opt: string) => (
                     <button
                       key={opt}
+                      type="button"
                       onClick={() => setAnswers({ ...answers, [q.id]: opt })}
-                      className={`text-left p-3 rounded-xl text-sm transition-all border ${
-                        answers[q.id] === opt 
-                          ? 'bg-brand-500/10 border-brand-500 text-brand-300' 
-                          : 'bg-surface/50 border-surface-border text-slate-400 hover:border-slate-600'
+                      className={`w-full text-left p-3 rounded-xl text-[15px] border transition-all ${
+                        answers[q.id] === opt
+                          ? 'border-accent bg-accent/5 text-accent'
+                          : 'border-line text-text-primary'
                       }`}
+                    >
+                      ○ {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {q.type === 'true_false_ng' && (
+                <div className="flex gap-2 flex-wrap">
+                  {['True', 'False', 'Not Given'].map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setAnswers({ ...answers, [q.id]: opt })}
+                      className={answers[q.id] === opt ? 'toggle-btn-active' : 'toggle-btn'}
                     >
                       {opt}
                     </button>
@@ -168,111 +190,103 @@ export default function Reading() {
                 </div>
               )}
 
-              {/* Open Question */}
               {!q.options && (
-                <div className="ml-11">
-                  <textarea
-                    rows={4}
-                    placeholder="Type your answer here..."
-                    className="w-full bg-surface/50 border border-surface-border rounded-xl p-4 text-sm text-slate-200 focus:border-brand-500 outline-none transition-all"
-                    value={answers[q.id] || ''}
-                    onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
-                  />
-                </div>
+                <textarea
+                  rows={3}
+                  className="textarea text-[15px]"
+                  placeholder="Type your answer..."
+                  value={answers[q.id] || ''}
+                  onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                />
               )}
             </div>
           ))}
-
-          <div className="fixed bottom-0 inset-x-0 p-4 bg-surface/80 backdrop-blur-md lg:static lg:bg-transparent lg:p-0 z-40">
-             <button
-               onClick={handleSubmit}
-               disabled={!isAllAnswered || submitMutation.isPending}
-               className="btn-primary w-full py-4 rounded-2xl font-bold shadow-2xl disabled:opacity-50 transition-all active:scale-95"
-             >
-               {submitMutation.isPending ? 'Grading...' : 'Submit Answers'}
-             </button>
-          </div>
         </div>
+
+        <p className="text-[13px] text-text-secondary">
+          {answeredCount} / {totalQuestions} answered
+        </p>
+        <div className="progress-bar">
+          <div
+            className="progress-bar-fill"
+            style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!isAllAnswered || submitMutation.isPending}
+          className="btn-primary"
+        >
+          {submitMutation.isPending ? 'Grading...' : 'Submit Answers'}
+        </button>
       </div>
     );
   }
 
-  // ─── STAGE: Results ──────────────────────────────────────────
   if (state === 'results' && results) {
     return (
-      <div className="max-w-3xl mx-auto space-y-10 px-4 pb-20">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold">Results</h1>
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-6xl font-black text-brand-400">{results.readingScore}%</div>
-            <div className="w-full max-w-xs bg-surface-elevated h-3 rounded-full overflow-hidden">
-               <div 
-                 className="h-full bg-brand-500 transition-all duration-1000" 
-                 style={{ width: `${results.readingScore}%` }}
-               />
-            </div>
-            <p className="text-slate-500 font-medium">
-              You got {results.correctAnswers} out of {results.totalQuestions} questions right
-            </p>
+      <div className="space-y-4 -mt-2">
+        <Header
+          title="Results"
+          showBack
+          onBack={() => { setState('intro'); setAnswers({}); setResults(null); }}
+        />
+        <div className="card-liquid text-center py-6 result-card">
+          <div className="font-serif text-[64px] text-accent leading-none">{results.readingScore}</div>
+          <p className="text-[13px] text-text-secondary mt-2">Reading Score</p>
+          <div className="progress-bar max-w-xs mx-auto mt-3">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${(results.correctAnswers / results.totalQuestions) * 100}%` }}
+            />
           </div>
+          <p className="text-[13px] text-text-secondary mt-2">
+            {results.correctAnswers}/{results.totalQuestions}
+          </p>
         </div>
 
-        <div className="space-y-6">
-          {results.answers.map((ans: any, i: number) => (
-            <div 
-              key={ans.questionId} 
-              className={`glass p-6 rounded-3xl border-l-8 ${
-                ans.isCorrect ? 'border-l-green-500' : 'border-l-red-500'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-4">
-                 <h3 className="font-bold text-lg text-slate-200">Question {i + 1}</h3>
-                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                   ans.isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                 }`}>
-                   {ans.isCorrect ? 'CORRECT' : 'INCORRECT'}
-                 </span>
-              </div>
-              
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-500 uppercase tracking-wider text-xs mb-1">Your Answer</p>
-                  <p className="text-slate-200">{ans.answer || '(Empty)'}</p>
-                </div>
+        <div className="space-y-3">
+          {results.answers.map((ans: any, i: number) => {
+            const isPartial = !ans.isCorrect && ans.aiExplanation?.toLowerCase().includes('partial');
+            const cardClass = ans.isCorrect ? 'card-success' : isPartial ? 'card-warning' : 'card-error';
+            const icon = ans.isCorrect ? '✅' : isPartial ? '◑' : '❌';
 
-                {!ans.isCorrect && (
-                   <div>
-                     <p className="text-slate-500 uppercase tracking-wider text-xs mb-1">Correct Answer</p>
-                     <p className="text-green-400 font-medium">{ans.correctAnswer}</p>
-                   </div>
+            return (
+              <div key={ans.questionId} className={`${cardClass} result-card`} style={{ animationDelay: `${i * 80}ms` }}>
+                <p className="text-[15px] font-medium text-text-primary mb-1">
+                  {i + 1} {icon}
+                </p>
+                <p className="text-[13px] text-text-secondary mb-2">Your answer: {ans.answer || '(empty)'}</p>
+                {!ans.isCorrect && ans.correctAnswer && (
+                  <p className="text-[13px] text-[#34a853] mb-2">✓ {ans.correctAnswer}</p>
                 )}
-
-                <div className="bg-surface-elevated/50 p-4 rounded-2xl space-y-2">
-                  <p className="text-brand-400 font-bold flex items-center gap-2">
-                    <span>💡</span> Why?
-                  </p>
-                  <p className="text-slate-300 leading-relaxed italic">
+                {isPartial && <p className="text-[13px] text-[#f9ab00] mb-2">Partially correct</p>}
+                <button
+                  type="button"
+                  onClick={() => setOpenAccordion((o) => ({ ...o, [ans.questionId]: !o[ans.questionId] }))}
+                  className="text-[13px] text-text-secondary"
+                >
+                  ▼ {isPartial ? 'Фидбек от ИИ' : 'Почему?'}
+                </button>
+                {openAccordion[ans.questionId] && (
+                  <p className="text-[13px] text-text-secondary mt-2 leading-relaxed">
                     {ans.aiExplanation || ans.explanation}
                   </p>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="flex gap-4">
-           <button 
-             onClick={() => window.location.reload()}
-             className="btn-primary flex-1 py-4 rounded-2xl font-bold"
-           >
-             Try Another Passage
-           </button>
-           <button 
-             onClick={() => (window.location.href = '/dashboard')}
-             className="btn-ghost flex-1 py-4 rounded-2xl font-bold bg-surface-elevated"
-           >
-             Return to Dashboard
-           </button>
+        <div className="flex gap-2">
+          <button type="button" className="btn-secondary flex-1" onClick={() => { setState('intro'); setAnswers({}); setResults(null); }}>
+            New Passage
+          </button>
+          <button type="button" className="btn-ghost flex-1 border border-line rounded-xl" onClick={() => navigate('/dashboard')}>
+            Dashboard
+          </button>
         </div>
       </div>
     );

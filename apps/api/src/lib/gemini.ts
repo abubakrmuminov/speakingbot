@@ -9,36 +9,37 @@ const GEMINI_MODEL = process.env['GEMINI_MODEL'] ?? 'gemini-2.0-flash-lite';
 
 const ANALYSIS_SYSTEM_INSTRUCTION = `You are an expert English speaking coach, linguist, and examiner. You are working with a Russian-speaking learner.
 
-The user will send you an audio recording. Your goal is to analyze it with extreme precision.
+The user will send you an audio recording. Analyze it with extreme precision.
 
-CRITICAL: You must provide a VERBATIM transcript. Do NOT "clean up" the speech. If the user mispronounces a word (e.g., "xello" instead of "hello"), transcribe the sound exactly as it was heard if possible, or use the transcript to highlight the error later.
+TRANSCRIPT RULE: Transcribe verbatim. If the user mispronounces a word, write what was actually heard — use phonetic approximation in square brackets if the distortion is severe, like [goot] instead of "good". Do NOT silently correct anything in the transcript field.
 
-JSON structure:
+Return a single JSON object with this exact structure:
+
 {
-  "transcript": "Verbatim transcript (e.g., 'Xello, my English is very well'). Do NOT fix errors here.",
-  "wordsPerMinute": 0,
-  "pauseCount": 0,
-  "confidenceLevel": 1-5,
+  "transcript": "Verbatim transcript. Phonetic distortions in [brackets]. Do NOT fix errors here.",
+  "wordsPerMinute": <number>,
+  "pauseCount": <number>,
+  "confidenceLevel": <1–5, where 1 = hesitant/broken, 3 = functional but accented, 5 = near-native>,
   "errors": [
     {
-      "original": "exactly what the user said (with phonetic approximation if needed)",
+      "original": "exactly what the user said",
       "corrected": "standard English version",
-      "explanation": "Объяснение на русском. Если это произношение, объясните как правильно расположить язык/зубы (phonetic tips).",
-      "category": "grammar|vocabulary|pronunciation",
-      "pattern": "Specific rule name (e.g., 'H-dropping', '/h/ vs /x/')"
+      "explanation": "Объяснение на русском. Для произношения — опишите конкретно: положение языка, зубов, участие голосовых связок. Для грамматики — назовите правило и почему русский мозг делает эту ошибку.",
+      "category": "grammar | vocabulary | pronunciation",
+      "pattern": "Specific error pattern name, like: H-dropping, TH-fronting, Vowel reduction, Article omission, False friend"
     }
   ],
-  "dialogueReply": "Natural English reply (2-4 sentences, end with a question). Be encouraging but don't ignore the errors.",
-  "grammarTip": "One specific phonetic or linguistic insight in English based on the user's speech.",
-  "topicFeedback": "Brief Russian feedback on the content and clarity of the speech."
+  "dialogueReply": "Natural English reply (2–4 sentences). Acknowledge what the user said. End with a question. Be warm but rigorous — do not pretend errors didn't happen.",
+  "grammarTip": "One specific phonetic or linguistic insight in English, directly tied to something in this recording.",
+  "topicFeedback": "Краткая обратная связь на русском: насколько понятна речь, раскрыта ли тема, что улучшить в содержании."
 }
 
 RULES:
-- Priority: Pronunciation errors are just as important as grammar. Catch them all.
-- Errors array: max 5 items. Prioritize the most "broken" or "non-native" aspects.
-- transcript: Must match what was ACTUALLY said, even if it's ungrammatical or phonetic nonsense.
-- Always include the 'grammar' error 'my English is very well' -> 'very good' if the user said it.
-- Never be condescending. The user wants rigorous, professional feedback.`;
+1. Errors array: max 5 items. Rank by impact on comprehension — pronunciation errors that cause misunderstanding outrank minor grammar slips.
+2. If the user says "my English is very well" — always include this as a grammar error: "very well" (adverb) is wrong here, "very good" (adjective) is correct.
+3. pattern field must be a specific, named linguistic phenomenon — not a paraphrase of the explanation.
+4. Never skip pronunciation errors. Russian speakers systematically struggle with: word-final voiced consonants, /w/ vs /v/, /θ/ and /ð/, vowel length, and sentence stress. If any of these appear, flag them.
+5. The transcript field is sacred — it reflects reality, not intention.`;
 
 /**
  * Attempts to repair truncated JSON by adding missing closing braces.
@@ -85,6 +86,36 @@ function tryRepairJson(json: string): string {
 }
 
 /**
+ * Helper to generate content and parse JSON with repair mechanism.
+ */
+async function generateJsonResponse<T>(
+  model: any,
+  prompt: string,
+  generationConfig: any = { temperature: 0.7, maxOutputTokens: 2048 }
+): Promise<T> {
+  const result = await model.generateContent({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig,
+  });
+
+  const rawText = result.response.text();
+  let jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+  try {
+    return JSON.parse(jsonText);
+  } catch (err) {
+    console.warn(`[Gemini] Initial JSON parse failed, attempting repair...`);
+    try {
+      jsonText = tryRepairJson(jsonText);
+      return JSON.parse(jsonText);
+    } catch (repairErr) {
+      console.error(`[Gemini] JSON repair failed. Raw text: ${rawText}`);
+      throw new Error(`Gemini returned invalid/truncated JSON: ${jsonText.slice(0, 100)}...`);
+    }
+  }
+}
+
+/**
  * Analyses a user's audio recording and returns structured coaching feedback.
  */
 export async function analyzeAudio(
@@ -111,41 +142,30 @@ export async function analyzeAudio(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60_000);
 
-  let result;
   try {
-    result = await model.generateContent({
+    const result = await model.generateContent({
       contents: [{ role: 'user', parts: [audioPart, textPart] }],
       generationConfig: {
         temperature: 0.4,
         maxOutputTokens: 4096,
       },
     });
+
+    const rawText = result.response.text();
+    let jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch {
+      jsonText = tryRepairJson(jsonText);
+      parsed = JSON.parse(jsonText);
+    }
+
+    return GeminiAnalysisResponseSchema.parse(parsed);
   } finally {
     clearTimeout(timeout);
   }
-
-  const rawText = result.response.text();
-  console.log(`[Gemini] Raw response length: ${rawText.length}`);
-
-  // Strip possible markdown code fences
-  let jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch (err) {
-    console.warn(`[Gemini] Initial parse failed, attempting repair...`);
-    try {
-      jsonText = tryRepairJson(jsonText);
-      parsed = JSON.parse(jsonText);
-      console.info(`[Gemini] JSON repaired successfully.`);
-    } catch (repairErr) {
-      console.error(`[Gemini] Repair failed. Raw text: ${rawText}`);
-      throw new Error(`Gemini returned invalid/truncated JSON: ${jsonText.slice(0, 100)}...`);
-    }
-  }
-
-  return GeminiAnalysisResponseSchema.parse(parsed);
 }
 
 /**
@@ -154,6 +174,7 @@ export async function analyzeAudio(
 export async function generateTopic(errorPatterns: Pick<ErrorPattern, 'pattern' | 'occurrences'>[]): Promise<GeneratedTopic> {
   const model = genAI.getGenerativeModel({
     model: GEMINI_MODEL,
+    systemInstruction: 'You are an English speaking coach. Respond ONLY with valid JSON.',
   });
 
   const topPatterns = errorPatterns
@@ -163,39 +184,47 @@ export async function generateTopic(errorPatterns: Pick<ErrorPattern, 'pattern' 
 
   const scenarioList = SCENARIOS.join(', ');
 
-  const prompt = `You are an English speaking coach. Generate a speaking practice scenario for an advanced Russian learner.
+const prompt = `You are generating a speaking practice scenario for a Russian-speaking English learner.
 
-User's top error patterns:
-${topPatterns || 'No recorded errors yet — pick an engaging scenario.'}
+LEARNER'S CURRENT ERROR PATTERNS:
+${topPatterns || 'No recorded errors yet — treat as beginner-intermediate (B1).'}
 
-Available scenario types: ${scenarioList}
+AVAILABLE SCENARIO TYPES:
+${scenarioList}
 
-Respond ONLY with valid JSON (no markdown):
+YOUR TASK:
+Choose a scenario type and topic that will naturally provoke the learner to use the structures they struggle with most. If error patterns are listed, pick a scenario where those patterns are likely to surface — not one that avoids them.
+
+DIFFICULTY SELECTION GUIDE:
+- B1: short answers acceptable, simple tenses, everyday vocabulary
+- B2: requires opinions, conditionals, some abstract reasoning  
+- C1: nuanced discussion, complex grammar expected, abstract or professional topics
+Base difficulty on the error patterns above. Severe basic errors → B1. Intermediate mistakes → B2. Near-native slips → C1.
+
+OPENING LINE RULES:
+- Write it as the other character speaking first — not a narrator describing the scene
+- It must be a natural spoken sentence that immediately requires the learner to respond
+- Length: one to two sentences maximum
+- Tone must match the scenario type (professional, casual, academic, etc.)
+
+Return a single JSON object:
 {
-  "topic": "specific engaging description of what the user should talk about (1-2 sentences)",
-  "scenario": "one of the available scenario types",
-  "openingLine": "The AI coach's opening line to start the conversation (immersive, in character)",
-  "difficulty": "B1|B2|C1"
+  "topic": "Specific topic title (3–6 words)",
+  "scenario": "Must be one of the available scenario types, copied exactly",
+  "openingLine": "The first thing the other character says to the learner",
+  "difficulty": "B1 | B2 | C1",
+  "targetPatterns": ["error pattern 1", "error pattern 2"]
 }
 
-Rules:
-- Rotate through different scenario types — don't repeat the most common one
-- The topic should target the user's weak areas naturally (don't mention the errors directly)
-- openingLine should be natural, warm, and put the user in the situation immediately`;
+targetPatterns: list the 1–2 error patterns from the learner's history that this scenario is designed to surface. If no history exists, leave as empty array.`;
 
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.9, maxOutputTokens: 1024 },
-  });
-
-  const rawText = result.response.text();
-  const jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error(`Gemini returned invalid JSON for topic: ${jsonText.slice(0, 200)}`);
+  const parsed = await generateJsonResponse<any>(model, prompt, { temperature: 0.9, maxOutputTokens: 1024 });
+  
+  // Manual safety injection in case of truncation
+  if (parsed && typeof parsed === 'object') {
+    if (!parsed.difficulty) parsed.difficulty = 'B2';
+    if (!parsed.scenario) parsed.scenario = 'debate';
+    if (!parsed.openingLine) parsed.openingLine = 'Hello! Ready to start?';
   }
 
   return SessionStartResponseSchema.parse(parsed);
@@ -210,6 +239,7 @@ export async function generateReading(
 ): Promise<ReadingPassage> {
   const model = genAI.getGenerativeModel({
     model: GEMINI_MODEL,
+    systemInstruction: 'You are an IELTS generator. Respond ONLY with valid JSON.',
   });
 
   const topPatterns = errorPatterns
@@ -217,50 +247,20 @@ export async function generateReading(
     .map((e, i) => `${i + 1}. ${e.pattern} (${e.occurrences}x)`)
     .join('\n');
 
-  const prompt = `You are an IELTS/TOEFL reading test generator for a ${difficulty} English learner.
+  const prompt = `Generate an academic reading passage (${difficulty}) with 8 questions (JSON).
+User's recent error patterns: ${topPatterns || 'None'}
 
-Generate an academic reading passage with comprehension questions.
-You must respond ONLY with a valid JSON object. No markdown, no preamble.
+Passage must be 800-1000 words. All explanations in Russian.
+JSON structure: { "passage": "...", "topic": "...", "difficulty": "${difficulty}", "questions": [...] }`;
 
-User's recent error patterns (for vocabulary targeting):
-${topPatterns || 'None provided'}
+  const parsed = await generateJsonResponse<any>(model, prompt, { temperature: 0.7, maxOutputTokens: 8192 });
 
-RULES:
-- Generate exactly 8 questions total: 3 multiple_choice + 3 true_false_ng + 2 open
-- Difficulty ${difficulty}: ${difficulty === 'B2' ? 'complex but accessible sentences, common academic vocabulary' : 'dense academic prose, low-frequency vocabulary, implicit meaning'}
-- All explanations in Russian
-- Passage must be 800-1000 words
-- Respond ONLY with JSON:
-{
-  "passage": "...",
-  "topic": "...",
-  "difficulty": "${difficulty}",
-  "questions": [
-    {
-      "id": "q1",
-      "type": "multiple_choice",
-      "question": "...",
-      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
-      "correctAnswer": "A. ...",
-      "explanation": "..."
-    },
-    ...
-  ]
-}`;
-
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
-  });
-
-  const rawText = result.response.text();
-  const jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-
-  let parsed: any;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error(`Gemini returned invalid JSON for reading: ${jsonText.slice(0, 200)}`);
+  // Manual safety injection
+  if (parsed && typeof parsed === 'object') {
+    if (!parsed.passage) parsed.passage = 'No passage generated.';
+    if (!parsed.topic) parsed.topic = 'Topic not specified.';
+    if (!parsed.difficulty) parsed.difficulty = difficulty;
+    if (!parsed.questions || !Array.isArray(parsed.questions)) parsed.questions = [];
   }
 
   return parsed as ReadingPassage;
@@ -276,38 +276,24 @@ export async function evaluateOpenAnswer(
 ): Promise<{ isCorrect: boolean; score: number; aiExplanation: string }> {
   const model = genAI.getGenerativeModel({
     model: GEMINI_MODEL,
+    systemInstruction: 'You are an English examiner. Respond ONLY with valid JSON.',
   });
 
-  const prompt = `You are an English language examiner.
-Evaluate the student's answer to an open reading comprehension question.
-Respond ONLY with valid JSON:
-{
-  "isCorrect": true/false,
-  "score": 0-2,
-  "aiExplanation": "Объяснение на русском — что правильно, что упущено, как улучшить"
-}
-
+  const prompt = `Evaluate the student's answer (JSON):
 Question: ${question}
-Reference answer: ${referenceAnswer}
-Student answer: ${userAnswer}
+Reference: ${referenceAnswer}
+Student: ${userAnswer}
 
-Be fair but rigorous. Accept paraphrasing. Reject answers that miss the key idea. Score: 0=wrong, 1=partially correct, 2=fully correct.`;
+JSON: { "isCorrect": boolean, "score": 0-2, "aiExplanation": "..." }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 512 },
-  });
+  const parsed = await generateJsonResponse<any>(model, prompt, { temperature: 0.3, maxOutputTokens: 1024 });
 
-  const rawText = result.response.text();
-  const jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-
-  try {
-    return JSON.parse(jsonText);
-  } catch {
-    return {
-      isCorrect: false,
-      score: 0,
-      aiExplanation: 'Ошибка при анализе ответа ИИ.',
-    };
+  // Manual safety injection
+  if (parsed && typeof parsed === 'object') {
+    if (parsed.isCorrect === undefined) parsed.isCorrect = false;
+    if (parsed.score === undefined) parsed.score = 0;
+    if (!parsed.aiExplanation) parsed.aiExplanation = 'No explanation provided.';
   }
+
+  return parsed;
 }

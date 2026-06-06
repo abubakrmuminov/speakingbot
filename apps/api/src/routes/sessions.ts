@@ -120,20 +120,6 @@ export async function sessionRoutes(fastify: FastifyInstance) {
     const finalConfidence = analysis?.confidenceLevel || 3;
     const finalErrors = analysis?.errors || [];
 
-    const errorCount = finalErrors.length;
-    const fluencyScore = calculateFluencyScore({
-      wordsPerMinute: finalWpm,
-      pauseCount: finalPauseCount,
-      errorCount,
-      confidenceLevel: finalConfidence,
-      pronunciationScore: pronunciation?.pronunciationScore,
-    });
-
-    // Estimate session duration
-    const estimatedMinutes = Math.max(1, Math.round(finalWpm > 0
-      ? (finalTranscript.split(/\s+/).length / finalWpm)
-      : 3));
-
     const pronErrors = pronunciation?.words
       .filter((w: PronunciationWord) => w.errorType === 'Mispronunciation' && w.accuracyScore < 80)
       .map((w: PronunciationWord) => ({
@@ -157,7 +143,7 @@ export async function sessionRoutes(fastify: FastifyInstance) {
       pauseCount: finalPauseCount,
       errorCount,
       confidenceLevel: finalConfidence,
-      pronunciationScore: pronunciation?.overallScore,
+      pronunciationScore: pronunciation?.pronunciationScore,
     });
 
     // Estimate session duration

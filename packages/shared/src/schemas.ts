@@ -50,9 +50,9 @@ export const GeminiAnalysisResponseSchema = z.object({
 
 export const SessionStartResponseSchema = z.object({
   topic: z.string(),
-  scenario: z.enum(SCENARIOS),
-  openingLine: z.string(),
-  difficulty: z.string(),
+  scenario: z.enum(SCENARIOS).default('debate'),
+  openingLine: z.string().default('Hello! I am ready to practice English with you. What would you like to talk about?'),
+  difficulty: z.string().default('B2'),
 });
 
 export const SessionSchema = z.object({
