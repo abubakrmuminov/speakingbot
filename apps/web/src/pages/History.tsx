@@ -105,9 +105,17 @@ export default function History() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[15px] font-medium text-text-primary truncate pr-2">{s.topic}</span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-serif text-lg text-accent">{s.fluencyScore}</span>
-                        <span>🎙</span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {s.pronunciationScore !== null && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] text-text-secondary">Acc:</span>
+                            <span className="font-serif text-[15px] text-brand-300 font-bold">{s.pronunciationScore}%</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <span className="font-serif text-lg text-accent">{s.fluencyScore}</span>
+                          <span className="text-xs">🎙️</span>
+                        </div>
                       </div>
                     </div>
                     <p className="text-[12px] text-text-secondary mt-0.5">

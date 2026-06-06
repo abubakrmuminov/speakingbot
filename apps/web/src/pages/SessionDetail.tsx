@@ -107,10 +107,17 @@ export default function SessionDetail() {
       {session.pronunciationScore !== null && (
         <button
           type="button"
-          className="btn-secondary mt-4"
+          className="btn-primary !bg-brand-600 !border-brand-500 mt-6 shadow-lg shadow-brand-500/20 py-4"
           onClick={() => navigate(`/session/${session.id}/pronunciation`)}
         >
-          Pronunciation Analysis →
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-lg">🎯</span>
+            <div className="text-left">
+              <div className="text-[10px] uppercase font-bold opacity-80 leading-none">View Details</div>
+              <div className="text-[15px] font-bold">Pronunciation: {session.pronunciationScore}%</div>
+            </div>
+            <span className="ml-auto text-xl">→</span>
+          </div>
         </button>
       )}
     </div>
