@@ -176,13 +176,13 @@ export default function Reading() {
                         onClick={() => setAnswers({ ...answers, [currentQuestion.id]: opt })}
                         className={`w-full text-left p-5 rounded-[24px] text-[15px] border-2 transition-all duration-300 ${
                           answers[currentQuestion.id] === opt
-                            ? 'border-accent bg-white text-accent shadow-xl shadow-accent/10'
-                            : 'border-white bg-white/50 text-text-primary'
+                            ? 'border-accent bg-accent/5 text-accent shadow-xl shadow-accent/10'
+                            : 'border-line/20 bg-bg-subtle text-text-primary hover:border-line'
                         }`}
                       >
                          <div className="flex items-center gap-4">
                             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                              answers[currentQuestion.id] === opt ? 'bg-accent text-white' : 'bg-bg-subtle text-text-secondary'
+                              answers[currentQuestion.id] === opt ? 'bg-accent text-white' : 'bg-bg text-text-secondary border border-line/30'
                             }`}>
                                {opt.charAt(0)}
                             </span>
@@ -202,8 +202,8 @@ export default function Reading() {
                         onClick={() => setAnswers({ ...answers, [currentQuestion.id]: opt })}
                         className={`w-full text-left p-5 rounded-[24px] font-black uppercase tracking-widest text-[12px] border-2 transition-all duration-300 ${
                           answers[currentQuestion.id] === opt 
-                            ? 'border-accent bg-white text-accent shadow-xl shadow-accent/10' 
-                            : 'border-white bg-white/50 text-text-secondary'
+                            ? 'border-accent bg-accent/5 text-accent shadow-xl shadow-accent/10' 
+                            : 'border-line/20 bg-bg-subtle text-text-primary hover:border-line'
                         }`}
                       >
                         {opt}

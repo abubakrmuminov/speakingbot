@@ -21,7 +21,7 @@ export default function Dashboard() {
           onClick={() => navigate('/reading')}
           className="group relative h-48 rounded-[32px] overflow-hidden transition-all active:scale-[0.98] border border-line/20 shadow-2xl shadow-black/5"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white to-bg-subtle group-active:opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-surface to-bg-subtle group-active:opacity-80" />
           <div className="relative h-full flex flex-col justify-center items-center p-6 text-center">
             <span className="text-4xl mb-3">📖</span>
             <h3 className="text-xl font-black uppercase tracking-widest text-text-primary">Reading</h3>
@@ -33,7 +33,7 @@ export default function Dashboard() {
           onClick={() => navigate('/session')}
           className="group relative h-48 rounded-[32px] overflow-hidden transition-all active:scale-[0.98] border border-line/20 shadow-2xl shadow-black/5"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white to-bg-subtle group-active:opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-surface to-bg-subtle group-active:opacity-80" />
           <div className="relative h-full flex flex-col justify-center items-center p-6 text-center">
              <span className="text-4xl mb-3">🎙️</span>
              <h3 className="text-xl font-black uppercase tracking-widest text-text-primary">Listening</h3>

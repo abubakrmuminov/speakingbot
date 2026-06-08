@@ -284,7 +284,7 @@ export default function Session() {
            <div className="space-y-1">
               <span className="text-[12px] font-black uppercase tracking-widest text-accent opacity-60">Mastery Achievement</span>
               <h2 className="font-serif text-5xl font-black text-text-primary tracking-tighter">
-                {s.fluencyScore}
+                <ScoreCounter target={s.fluencyScore} />
               </h2>
               <p className="text-[13px] font-bold text-text-secondary opacity-60 uppercase tracking-widest">Fluency Score</p>
            </div>
@@ -301,24 +301,51 @@ export default function Session() {
           </div>
         </div>
 
-        <div className="space-y-4">
-           <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary px-1 opacity-60 italic">AI Feedback</p>
-           <div className="card-liquid !p-8 shadow-2xl shadow-black/5 bg-accent/5 border-0">
-              <p className="font-serif text-lg text-text-primary leading-relaxed">
-                "{s.dialogueReply}"
-              </p>
+        <div className="space-y-6">
+           <section className="space-y-4">
+              <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary px-1 opacity-60 italic">AI Feedback</p>
+              <div className="card-liquid !p-8 shadow-2xl shadow-black/5 bg-accent/5 border-0">
+                 <p className="font-serif text-lg text-text-primary leading-relaxed">
+                   "{s.dialogueReply}"
+                 </p>
+                 <button
+                   type="button"
+                   onClick={() => speak(s.dialogueReply)}
+                   className="mt-6 text-[11px] font-black text-accent uppercase tracking-widest px-6 py-3 bg-white dark:bg-black rounded-full shadow-sm active:scale-95 transition-all"
+                 >
+                   🔊 Hear AI Reply
+                 </button>
+              </div>
+           </section>
+
+           {s.errorAnalysis?.length > 0 && (
+             <section className="space-y-4">
+                <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary px-1 opacity-60 italic">Mistakes found</p>
+                <div className="space-y-3">
+                   {s.errorAnalysis.map((item: ErrorItem, i: number) => (
+                     <ErrorCard key={i} item={item} index={i} />
+                   ))}
+                </div>
+             </section>
+           )}
+
+           {s.pronunciationScore !== null && (
               <button
                 type="button"
-                onClick={() => speak(s.dialogueReply)}
-                className="mt-6 text-[11px] font-black text-accent uppercase tracking-widest px-6 py-3 bg-white rounded-full shadow-sm"
+                className="w-full card !p-6 flex items-center justify-between group active:scale-[0.98] transition-all bg-bg-subtle border-0"
+                onClick={() => navigate(`/session/${s.id}/pronunciation`)}
               >
-                🔊 Hear AI Reply
+                <div className="text-left">
+                   <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-1 opacity-60">Pronunciation</p>
+                   <p className="text-xl font-serif font-black text-text-primary">{s.pronunciationScore}% Mastery</p>
+                </div>
+                <span className="text-2xl opacity-40 group-hover:opacity-100 transition-opacity">→</span>
               </button>
-           </div>
+           )}
 
            <div className="card-liquid !p-8 border-0 bg-bg-subtle/50">
-              <h4 className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-3">Recommendation</h4>
-              <p className="text-[14px] text-text-primary leading-relaxed">{s.tipsForImprovement}</p>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-3">AI Recommendation</h4>
+              <p className="text-[14px] text-text-primary leading-relaxed italic">{s.tipsForImprovement || s.grammarTip}</p>
            </div>
         </div>
 
