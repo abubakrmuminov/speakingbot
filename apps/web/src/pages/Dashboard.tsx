@@ -50,19 +50,19 @@ export default function Dashboard() {
               {todayDone ? 'Goal completed!' : 'Start your learning Streak'}
             </h3>
           </div>
-          <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-2xl shadow-inner">
+          <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/10">
             🔥
           </div>
         </div>
         
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs font-bold uppercase tracking-widest opacity-80">
+        <div className="space-y-3">
+          <div className="flex justify-between text-[11px] font-black uppercase tracking-widest opacity-80">
             <span>{currentStreak} Day Streak</span>
-            <span className="text-accent-foreground text-white font-black underline underline-offset-4">View Streak ›</span>
+            <span className="text-white font-black underline underline-offset-4">View History</span>
           </div>
           <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-white transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+              className="h-full bg-white transition-all duration-1000 shadow-[0_0_15px_rgba(255,255,255,0.6)]" 
               style={{ width: todayDone ? '100%' : '60%' }} 
             />
           </div>
@@ -71,10 +71,10 @@ export default function Dashboard() {
 
       {/* Activity List */}
       <div>
-        <div className="flex items-center justify-between mb-4 px-1">
-          <p className="text-[12px] font-bold uppercase tracking-widest text-text-secondary">Your Courses</p>
-          <button onClick={() => navigate('/history')} className="text-[12px] font-bold text-accent uppercase tracking-widest flex items-center gap-1">
-            All <span className="text-[14px]">◇</span>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary opacity-60">Your Courses</p>
+          <button onClick={() => navigate('/history')} className="text-[11px] font-black text-accent uppercase tracking-widest px-2">
+            View All
           </button>
         </div>
 

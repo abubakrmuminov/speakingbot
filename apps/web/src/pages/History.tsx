@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import LottieDuck from '../components/LottieDuck';
+import Header from '../components/Header';
 
 type Tab = 'speaking' | 'reading';
 
@@ -63,11 +64,11 @@ export default function History() {
 
   return (
     <div className="space-y-6 animate-fade-up pb-8">
-      {/* Header with Hero */}
-      <div className="text-center pt-4">
-        <LottieDuck type="search" size={120} className="mb-2 mx-auto" />
-        <h1 className="font-serif text-2xl text-text-primary tracking-tight">Activity Log</h1>
-        <p className="text-[13px] text-text-secondary mt-1">Review your past sessions and progress.</p>
+      <Header title="History" showBack={true} />
+      
+      {/* Centered Lottie Hero (Minimalist) */}
+      <div className="text-center pt-2">
+        <LottieDuck type="search" size={120} className="mx-auto" />
       </div>
 
       {/* Modern Tabs */}

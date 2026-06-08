@@ -25,7 +25,9 @@ export default function Header({ title, showBack, onBack, right }: HeaderProps) 
           </button>
         )}
       </div>
-      <span className="text-[15px] font-medium text-text-primary">{title}</span>
+      <span className="text-[13px] font-black uppercase tracking-widest text-text-primary px-2 truncate">
+        {!showBack && title}
+      </span>
       <div className="w-10 flex justify-end">{right ?? null}</div>
     </header>
   );

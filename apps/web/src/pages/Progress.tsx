@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { api } from '../lib/api';
 import LottieDuck from '../components/LottieDuck';
+import Header from '../components/Header';
 import type { HeatmapDay } from '@speaking-coach/shared';
 
 function Heatmap({ data }: { data: HeatmapDay[] }) {
@@ -91,11 +92,11 @@ export default function Progress() {
 
   return (
     <div className="space-y-8 animate-fade-up pb-8">
-      {/* Header with Hero */}
-      <div className="text-center pt-4">
-        <LottieDuck type="search" size={140} className="mb-2 mx-auto" />
-        <h1 className="font-serif text-3xl text-text-primary tracking-tight">Performance</h1>
-        <p className="text-[14px] text-text-secondary mt-1">Visualize your journey to fluency.</p>
+      <Header title="Progress" showBack={true} />
+      
+      {/* Centered Lottie Hero (Minimalist) */}
+      <div className="text-center pt-2">
+        <LottieDuck type="search" size={120} className="mx-auto" />
       </div>
 
       {/* Activity Section */}

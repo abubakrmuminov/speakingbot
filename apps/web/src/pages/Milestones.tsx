@@ -4,6 +4,8 @@ import { MILESTONE_LABELS } from '@speaking-coach/shared';
 import type { MilestoneType } from '@speaking-coach/shared';
 import { useToast } from '../components/Toast';
 import LottieDuck from '../components/LottieDuck';
+import Header from '../components/Header';
+import { useNavigate } from 'react-router-dom';
 
 const MILESTONE_ICONS: Record<string, string> = {
   streak_7: '🔥',
@@ -32,6 +34,7 @@ const ALL_MILESTONES: MilestoneType[] = [
 
 export default function Milestones() {
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ['milestones'],
@@ -85,10 +88,10 @@ export default function Milestones() {
 
   return (
     <div className="space-y-8 animate-fade-up pb-8">
-      {/* Header with Celebrate Duckly */}
-      <div className="text-center pt-4">
-        <LottieDuck type="celebrate" size={160} className="mb-2 mx-auto" />
-        <h1 className="font-serif text-3xl text-text-primary tracking-tight">Hall of Fame</h1>
+      <Header title="Milestones" showBack={true} />
+      
+      <div className="text-center pt-2">
+        <LottieDuck type="celebrate" size={140} className="mx-auto" />
         <p className="text-[14px] text-text-secondary mt-1">
           {achieved.size} of {ALL_MILESTONES.length} achievements unlocked
         </p>

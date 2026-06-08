@@ -68,14 +68,12 @@ export default function Reading() {
 
   if (state === 'intro') {
     return (
-      <div className="space-y-8 animate-fade-up">
-        {/* Hero Section */}
-        <div className="text-center pt-4">
-          <LottieDuck type="hello" size={160} className="mb-2" />
-          <h2 className="font-serif text-3xl text-text-primary tracking-tight">Academic Dictionary</h2>
-          <p className="text-[14px] text-text-secondary mt-1 max-w-[280px] mx-auto leading-relaxed">
-            IELTS · TOEFL level texts to expand your advanced vocabulary.
-          </p>
+      <div className="space-y-6 animate-fade-up">
+        <Header title="Reading" showBack={true} />
+        
+        {/* Centered Lottie Hero (Minimalist) */}
+        <div className="text-center pt-2">
+          <LottieDuck type="hello" size={140} className="mx-auto" />
         </div>
 
         {/* Feature List */}

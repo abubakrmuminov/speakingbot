@@ -40,118 +40,44 @@
 
 @layer components {
   .liquid-glass {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 0.5px solid rgba(255, 255, 255, 0.8);
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.3);
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.9) inset,
-      0 -1px 0 rgba(0, 0, 0, 0.04) inset,
-      0 8px 32px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      0 4px 24px -1px rgba(0, 0, 0, 0.04),
+      0 1px 0 rgba(255, 255, 255, 0.4) inset;
   }
 
   [data-theme="dark"] .liquid-glass {
-    background: rgba(20, 20, 20, 0.7);
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.08) inset,
-      0 8px 32px rgba(0, 0, 0, 0.4);
-  }
-
-  .app-shell {
-    @apply min-h-screen flex flex-col;
-    background: var(--color-bg);
-  }
-
-  .app-column {
-    @apply w-full max-w-[480px] mx-auto flex flex-col flex-1;
-    background: var(--color-bg);
-  }
-
-  .page-content {
-    @apply flex-1 px-4 py-4;
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .page-content-no-nav {
-    @apply flex-1 px-4 py-4;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(20, 20, 20, 0.6);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 10px 40px -10px rgba(0, 0, 0, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.05) inset;
   }
 
   .card {
-    @apply rounded-2xl border p-4;
+    @apply rounded-[28px] border p-5 transition-all duration-300;
     background: var(--color-surface);
-    border-color: var(--color-line);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.04);
+    box-shadow: 
+      0 2px 12px -2px rgba(0, 0, 0, 0.02),
+      0 12px 24px -8px rgba(0, 0, 0, 0.04);
   }
 
-  .streak-card-gradient {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
-  }
-
-  [data-theme="dark"] .streak-card-gradient {
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  }
-
-  .course-card {
-    @apply flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-[0.99];
-    background: var(--color-surface);
-    border-color: var(--color-line);
-  }
-
-  .course-card:hover {
-    @apply bg-bg-subtle;
-  }
-
-  .card-liquid {
-    @apply card liquid-glass;
-  }
-
-  .card-error {
-    @apply card;
-    background: color-mix(in srgb, #d93025 6%, var(--color-surface));
-    border-color: color-mix(in srgb, #d93025 20%, var(--color-line));
-  }
-
-  .card-success {
-    @apply card;
-    background: color-mix(in srgb, #34a853 6%, var(--color-surface));
-    border-color: color-mix(in srgb, #34a853 20%, var(--color-line));
-  }
-
-  .card-warning {
-    @apply card;
-    background: color-mix(in srgb, #f9ab00 8%, var(--color-surface));
-    border-color: color-mix(in srgb, #f9ab00 25%, var(--color-line));
-  }
-
-  .card-accent {
-    @apply card;
-    background: color-mix(
-      in srgb,
-      var(--color-accent) 8%,
-      var(--color-surface)
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--color-accent) 25%,
-      var(--color-line)
-    );
-  }
-
-  .card-tip {
-    @apply card;
-    border-left: 3px solid var(--color-accent);
+  [data-theme="dark"] .card {
+    border-color: rgba(255, 255, 255, 0.04);
+    box-shadow: 
+      0 4px 20px -5px rgba(0, 0, 0, 0.3);
   }
 
   .btn-primary {
-    @apply w-full font-medium text-white px-6 py-3 rounded-xl transition-all duration-150
-           disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
-    background: var(--color-accent);
+    @apply w-full font-black uppercase tracking-widest text-[13px] text-white px-8 py-4 rounded-2xl 
+           transition-all duration-300 shadow-xl shadow-accent/20 
+           hover:shadow-accent/30 hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0
+           disabled:opacity-40 disabled:pointer-events-none;
+    background: linear-gradient(135deg, var(--color-accent) 0%, #2b82f6 100%);
   }
 
   .btn-primary:not(:disabled):hover {

@@ -5,11 +5,11 @@ import { useEffect, useState } from 'react';
  * Curated Telegram-style Duck (Duckly) Lottie animations
  */
 const DUCKS = {
-  thinking: 'https://lottie.host/7978f804-629d-4950-848e-28d011f0436d/vH2X6Z8Y8n.json',
-  hello: 'https://lottie.host/cf4c8914-f446-4a4e-9d2a-7bf9ced9894e/sS6YV6mX0H.json',
-  celebrate: 'https://lottie.host/950005d5-9610-444e-86eb-69b0f69a96e9/O2P1pW6I0m.json',
-  study: 'https://lottie.host/17eb68e6-764f-4d92-807d-dc7c9656a84f/O6v7Xn7zX7.json',
-  search: 'https://lottie.host/80161a0f-621a-4d22-b52b-7de098522f16/zJ88nS77mZ.json',
+  thinking: 'https://assets9.lottiefiles.com/packages/lf20_p8bfn5to.json',
+  hello: 'https://assets5.lottiefiles.com/packages/lf20_m6cu91m9.json',
+  celebrate: 'https://assets10.lottiefiles.com/packages/lf20_6p8pzzv3.json',
+  study: 'https://assets2.lottiefiles.com/packages/lf20_ycxy99as.json',
+  search: 'https://assets10.lottiefiles.com/packages/lf20_96msczpw.json',
 };
 
 interface LottieDuckProps {
@@ -20,16 +20,35 @@ interface LottieDuckProps {
 
 export default function LottieDuck({ type, className = '', size = 120 }: LottieDuckProps) {
   const [animationData, setAnimationData] = useState<any>(null);
+  const [error, setError] = useState(false);
   const animationUrl = DUCKS[type];
 
   useEffect(() => {
+    setError(false);
     fetch(animationUrl)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load');
+        return res.json();
+      })
       .then((data) => setAnimationData(data))
-      .catch((err) => console.error('Failed to load lottie:', err));
+      .catch((err) => {
+        console.error('Lottie load error:', err);
+        setError(true);
+      });
   }, [animationUrl]);
 
-  if (!animationData) return <div style={{ width: size, height: size }} />;
+  if (error) {
+    return (
+      <div 
+        className={`flex items-center justify-center bg-accent/5 rounded-full ${className}`} 
+        style={{ width: size, height: size, margin: '0 auto' }}
+      >
+        <span className="text-4xl opacity-50">🦆</span>
+      </div>
+    );
+  }
+
+  if (!animationData) return <div style={{ width: size, height: size, margin: '0 auto' }} />;
 
   return (
     <div className={`flex items-center justify-center ${className}`} style={{ width: size, height: size, margin: '0 auto' }}>
