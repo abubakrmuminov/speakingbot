@@ -113,15 +113,35 @@ export default function Reading() {
   if (state === 'loading') {
     return (
       <div className="space-y-4 animate-fade-up">
-        <div className="skeleton h-6 w-48" />
-        <div className="skeleton h-4 w-32" />
-        <div className="space-y-2 mt-6">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="skeleton h-4 w-full" />
-          ))}
-          <div className="skeleton h-4 w-3/4" />
-        </div>
-        <p className="text-[13px] text-text-secondary text-center mt-8">Generating your passage...</p>
+        {generateMutation.isError ? (
+          <div className="text-center py-10">
+            <span className="text-4xl">⚠️</span>
+            <h3 className="text-lg font-medium text-text-primary mt-4">AI is busy</h3>
+            <p className="text-[14px] text-text-secondary mt-2 leading-relaxed">
+              Google Gemini is currently experiencing high demand. Please wait a moment and try again.
+            </p>
+            <div className="flex gap-2 mt-8">
+              <button type="button" onClick={handleStart} className="btn-primary flex-1">
+                Retry Now
+              </button>
+              <button type="button" onClick={() => setState('intro')} className="btn-secondary flex-1">
+                Back
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="skeleton h-6 w-48" />
+            <div className="skeleton h-4 w-32" />
+            <div className="space-y-2 mt-6">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="skeleton h-4 w-full" />
+              ))}
+              <div className="skeleton h-4 w-3/4" />
+            </div>
+            <p className="text-[13px] text-text-secondary text-center mt-8">Generating your passage...</p>
+          </>
+        )}
       </div>
     );
   }
