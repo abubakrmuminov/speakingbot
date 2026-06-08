@@ -251,7 +251,16 @@ export async function generateReading(
 User's recent error patterns: ${topPatterns || 'None'}
 
 Passage must be 800-1000 words. All explanations in Russian.
-JSON structure: { "passage": "...", "topic": "...", "difficulty": "${difficulty}", "questions": [...] }`;
+JSON structure: { 
+  "passage": "...", 
+  "topic": "...", 
+  "difficulty": "${difficulty}", 
+  "questions": [
+    { "id": "q1", "type": "multiple_choice", "question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correctAnswer": "A. ...", "explanation": "..." },
+    { "id": "q4", "type": "true_false_ng", "question": "...", "correctAnswer": "True", "explanation": "..." },
+    { "id": "q7", "type": "open", "question": "...", "correctAnswer": "Sentence from passage", "explanation": "..." }
+  ] 
+}`;
 
   const parsed = await generateJsonResponse<any>(model, prompt, { temperature: 0.7, maxOutputTokens: 8192 });
 
@@ -260,7 +269,19 @@ JSON structure: { "passage": "...", "topic": "...", "difficulty": "${difficulty}
     if (!parsed.passage) parsed.passage = 'No passage generated.';
     if (!parsed.topic) parsed.topic = 'Topic not specified.';
     if (!parsed.difficulty) parsed.difficulty = difficulty;
-    if (!parsed.questions || !Array.isArray(parsed.questions)) parsed.questions = [];
+    if (!parsed.questions || !Array.isArray(parsed.questions)) {
+      parsed.questions = [];
+    } else {
+      // Ensure each question is complete
+      parsed.questions = parsed.questions.map((q: any, i: number) => ({
+        id: q.id || `q${i + 1}`,
+        type: q.type || 'multiple_choice',
+        question: q.question || 'Question text missing',
+        options: Array.isArray(q.options) ? q.options : [],
+        correctAnswer: q.correctAnswer || '',
+        explanation: q.explanation || 'No explanation provided.',
+      }));
+    }
   }
 
   return parsed as ReadingPassage;

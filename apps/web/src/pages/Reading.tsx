@@ -156,9 +156,9 @@ export default function Reading() {
               </div>
               <p className="text-[15px] text-text-primary mb-3">{q.question}</p>
 
-              {q.options && q.type !== 'true_false_ng' && (
+              {q.type?.toLowerCase() === 'multiple_choice' && (
                 <div className="space-y-2">
-                  {q.options.map((opt: string) => (
+                  {(q.options && q.options.length > 0 ? q.options : ['A', 'B', 'C', 'D']).map((opt: string) => (
                     <button
                       key={opt}
                       type="button"
@@ -175,7 +175,7 @@ export default function Reading() {
                 </div>
               )}
 
-              {q.type === 'true_false_ng' && (
+              {q.type?.toLowerCase() === 'true_false_ng' && (
                 <div className="flex gap-2 flex-wrap">
                   {['True', 'False', 'Not Given'].map((opt) => (
                     <button
@@ -190,7 +190,7 @@ export default function Reading() {
                 </div>
               )}
 
-              {!q.options && (
+              {q.type?.toLowerCase() === 'open' && (
                 <textarea
                   rows={3}
                   className="textarea text-[15px]"

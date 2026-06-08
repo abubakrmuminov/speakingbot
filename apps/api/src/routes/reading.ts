@@ -66,7 +66,7 @@ export async function readingRoutes(fastify: FastifyInstance) {
       const answerText = userAns?.answer || '';
 
       if (q.type === 'multiple_choice' || q.type === 'true_false_ng') {
-        const isCorrect = answerText.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+        const isCorrect = answerText.trim().toLowerCase() === (q.correctAnswer || '').trim().toLowerCase();
         if (isCorrect) correctCount++;
         evaluatedAnswers.push({
           questionId: q.id,
