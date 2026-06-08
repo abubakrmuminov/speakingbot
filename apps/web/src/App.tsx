@@ -6,11 +6,7 @@ import Onboarding, { isOnboardingDone } from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Session from './pages/Session';
 import SessionDetail from './pages/SessionDetail';
-import History from './pages/History';
-import Progress from './pages/Progress';
-import Milestones from './pages/Milestones';
 import Reading from './pages/Reading';
-import Profile from './pages/Profile';
 import PronunciationDetail from './pages/PronunciationDetail';
 import TelegramGuard from './components/TelegramGuard';
 
@@ -69,10 +65,6 @@ export default function App() {
           <Route path="/session/:id" element={<SessionDetail />} />
           <Route path="/session/:id/pronunciation" element={<PronunciationDetail />} />
           <Route path="/reading" element={<Reading />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/milestones" element={<Milestones />} />
-          <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

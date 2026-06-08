@@ -172,67 +172,50 @@ export default function Session() {
 
   if (phase === 'topic' && startMutation.isPending) {
     return (
-      <div className="app-shell">
-        <div className="app-column min-h-screen flex flex-col items-center justify-center gap-4">
-          <LottieDuck type="search" size={150} />
-          <p className="text-[13px] text-text-secondary">Finding a topic…</p>
-        </div>
+      <div className="flex flex-col flex-1 justify-center animate-fade-up px-4 text-center pb-20">
+        <LottieDuck type="search" size={240} className="mx-auto" />
+        <h3 className="text-xl font-black uppercase tracking-widest text-text-primary animate-pulse">Finding partner...</h3>
+        <p className="text-[13px] text-text-secondary mt-2 opacity-60 uppercase font-black tracking-tighter">Setting up the scenario</p>
       </div>
     );
   }
 
   if ((phase === 'topic' || phase === 'idle') && topic) {
     return (
-      <div className="app-shell pb-8">
-        <div className="app-column min-h-screen relative px-4">
-          <CloseButton onClick={handleClose} />
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 animate-fade-up">
-            
-            {/* Hero Section */}
-            <div className="text-center pt-8">
-              <LottieDuck type="hello" size={160} className="mb-2" />
-              <h2 className="font-serif text-3xl text-text-primary tracking-tight">Speaking Scenarios</h2>
-              <p className="text-[14px] text-text-secondary mt-1 max-w-[280px] mx-auto leading-relaxed">
-                Practice real-life English conversations with AI.
+      <div className="flex flex-col flex-1 animate-fade-up">
+        <Header title="Listening" showBack={true} />
+        
+        <div className="flex-1 flex flex-col justify-center px-4 space-y-12 pb-12">
+          <div className="text-center space-y-6">
+            <LottieDuck type="hello" size={200} className="mx-auto" />
+            <div className="space-y-2">
+              <h2 className="font-serif text-4xl text-text-primary tracking-tight font-black">{scenarioLabel}</h2>
+              <p className="text-[15px] text-text-secondary max-w-[280px] mx-auto leading-relaxed opacity-60 italic">
+                "{topic.topic}"
               </p>
             </div>
+          </div>
 
-            <div className="card-liquid w-full p-6 shadow-md border-line/50">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="badge-accent uppercase text-[10px] px-2 py-0.5">{topic.difficulty}</span>
-                <span className="text-[12px] font-bold text-text-secondary uppercase tracking-widest">Scenario</span>
-              </div>
-              <h3 className="font-serif text-2xl text-text-primary mb-3 leading-tight">{scenarioLabel}</h3>
-              <div className="p-4 bg-bg-subtle rounded-2xl border border-line/30 mb-6 italic text-[15px] text-text-secondary leading-relaxed">
-                "{topic.topic}"
-              </div>
-              
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-1.5 text-[13px] text-text-secondary font-medium">
-                  <span>⏲</span> ~5 min practice
-                </div>
-                <button
-                  type="button"
-                  className="text-[12px] font-black uppercase tracking-widest text-accent flex items-center gap-1"
-                  onClick={() => { reset(); startMutation.mutate(); }}
-                >
-                  🔄 New Topic
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-4 w-full">
-              <button
+          <div className="space-y-4">
+             <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="badge-accent uppercase text-[10px] px-3 py-1">{topic.difficulty} level</span>
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">~5m Practice</span>
+             </div>
+             
+             <button
                 type="button"
-                className="w-full btn-primary py-4 shadow-xl shadow-accent/20 flex items-center justify-center gap-3"
+                className="btn-primary !py-5 shadow-2xl shadow-accent/20 flex items-center justify-center gap-3"
                 onClick={() => { setPhase('recording'); void startRecording(); }}
               >
-                <span className="text-xl">🎙</span> Start Recording
+                <span className="text-xl">🎙</span> Start Speaking
               </button>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-text-secondary opacity-60">
-                AI is ready to listen
-              </p>
-            </div>
+             
+             <button
+               onClick={() => { reset(); startMutation.mutate(); }}
+               className="w-full py-4 text-[11px] font-black uppercase tracking-widest text-text-secondary opacity-40 hover:opacity-100 transition-all"
+             >
+               Change Scenario
+             </button>
           </div>
         </div>
       </div>
@@ -244,47 +227,38 @@ export default function Session() {
     const secs = String(elapsed % 60).padStart(2, '0');
 
     return (
-      <div className="app-shell">
-        <div className="app-column min-h-screen relative px-6">
-          <CloseButton onClick={handleClose} />
-          <div className="flex-1 flex flex-col items-center justify-center gap-12 animate-fade-up">
+      <div className="flex flex-col flex-1 animate-fade-up">
+        <header className="h-14 px-4 flex items-center justify-between liquid-glass sticky top-0 z-50">
+           <button onClick={handleClose} className="btn-icon">×</button>
+           <div className="text-center">
+              <span className="text-[11px] font-black uppercase tracking-widest text-accent animate-pulse">Live Analysis</span>
+           </div>
+           <div className="w-10" />
+        </header>
+
+        <div className="flex-1 flex flex-col justify-center px-4 space-y-12 pb-20">
+          <div className="text-center space-y-8">
+            <div className="text-7xl font-serif text-text-primary font-black tracking-tighter tabular-nums">
+               {mins}<span className="opacity-20">:</span>{secs}
+            </div>
             
-            <div className="text-center space-y-1">
-              <p className="text-[12px] font-black uppercase tracking-widest text-accent animate-pulse">Live Recording</p>
-              <h3 className="text-[16px] font-bold text-text-primary uppercase tracking-tight">{scenarioLabel}</h3>
+            <div className="h-24 flex items-center justify-center p-8 bg-accent/5 rounded-[40px]">
+               {analyserNode && <Waveform analyserNode={analyserNode} />}
             </div>
+          </div>
 
-            <div className="w-full card-liquid p-8 flex flex-col items-center gap-8 shadow-2xl border-accent/20">
-               {analyserNode && (
-                 <div className="w-full h-24 flex items-center">
-                   <Waveform analyserNode={analyserNode} />
-                 </div>
-               )}
-               
-               <div className="text-5xl font-serif text-text-primary score-number tracking-tighter">
-                 {mins}<span className="opacity-30 mx-1">:</span>{secs}
-               </div>
+          <div className="flex flex-col items-center gap-8">
+            <button
+              type="button"
+              onClick={handleStopRecording}
+              className="w-28 h-28 rounded-full bg-[#d93025] text-white text-3xl flex items-center justify-center shadow-2xl shadow-red-500/40 active:scale-90 transition-all border-[12px] border-white"
+            >
+              ⏹
+            </button>
+            <div className="text-center">
+              <p className="text-[14px] font-black uppercase tracking-widest text-text-primary">Finish Speaking</p>
+              <p className="text-[12px] text-text-secondary mt-1 opacity-50 italic">AI will analyze your performance</p>
             </div>
-
-            <div className="flex flex-col items-center gap-6">
-              <button
-                type="button"
-                onClick={handleStopRecording}
-                className="w-24 h-24 rounded-full bg-[#d93025] text-white text-3xl flex items-center justify-center shadow-2xl shadow-red-500/30 active:scale-90 transition-all mic-recording border-8 border-white/10"
-              >
-                ⏹
-              </button>
-              <div className="text-center">
-                <p className="text-[14px] font-bold text-text-primary">Tap to stop</p>
-                <p className="text-[12px] text-text-secondary mt-0.5">Your progress is saved automatically</p>
-              </div>
-            </div>
-
-            {micError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                 <p className="text-[#d93025] text-[13px] font-medium">⚠️ {micError}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -293,22 +267,10 @@ export default function Session() {
 
   if (phase === 'processing') {
     return (
-      <div className="app-shell">
-        <div className="app-column min-h-screen relative px-6">
-          <CloseButton onClick={handleClose} />
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 animate-fade-up">
-            <LottieDuck type="search" size={200} className="mb-4" />
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold text-text-primary tracking-tight">AI is analyzing your speech</h3>
-              <p className="text-[14px] text-text-secondary leading-relaxed max-w-[240px] mx-auto">
-                Comparing your pronunciation and vocabulary to native standards...
-              </p>
-            </div>
-            <div className="w-48 h-1 bg-bg-subtle rounded-full overflow-hidden mt-4">
-              <div className="h-full bg-accent animate-loading-bar" />
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col flex-1 justify-center animate-fade-up px-4 text-center pb-20">
+        <LottieDuck type="search" size={240} className="mx-auto" />
+        <h3 className="text-xl font-black uppercase tracking-widest text-text-primary animate-pulse">Analyzing pronunciation...</h3>
+        <p className="text-[13px] text-text-secondary mt-2 opacity-60 uppercase font-black tracking-tighter">Decoding your fluency patterns</p>
       </div>
     );
   }
@@ -316,146 +278,65 @@ export default function Session() {
   if (phase === 'results' && result) {
     const s = result as any;
     return (
-      <div className="app-shell select-none pb-8">
-        <div className="app-column min-h-screen relative px-4">
-          <CloseButton onClick={handleClose} />
-          <div className="flex-1 flex flex-col gap-6 pt-12 animate-fade-up">
-            
-            {/* Score Hero */}
-            <div className="card-liquid text-center py-10 relative overflow-hidden">
-               <div className="absolute -top-10 -right-10 opacity-10 rotate-12 pointer-events-none">
-                 <LottieDuck type="celebrate" size={240} />
-               </div>
-               <div className="font-serif text-[84px] text-accent font-black tracking-tighter leading-none mb-1">
-                 {s.fluencyScore}
-               </div>
-               <p className="text-[14px] font-bold uppercase tracking-widest text-text-secondary">Fluency Level</p>
-               
-               <div className="mt-8 grid grid-cols-2 gap-4 max-w-[280px] mx-auto">
-                 <div className="text-center p-3 rounded-2xl bg-white/40 dark:bg-black/20 border border-white/50">
-                    <p className="text-lg font-black text-text-primary">{s.vocabularyScore}%</p>
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Vocab</p>
-                 </div>
-                 <div className="text-center p-3 rounded-2xl bg-white/40 dark:bg-black/20 border border-white/50">
-                    <p className="text-lg font-black text-text-primary">{s.accuracyScore}%</p>
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Accuracy</p>
-                 </div>
-               </div>
-            </div>
+      <div className="flex flex-col flex-1 animate-fade-up px-4 py-8 space-y-8 overflow-y-auto custom-scrollbar">
+        <div className="text-center space-y-4 py-8">
+           <LottieDuck type="celebrate" size={160} className="mx-auto" />
+           <div className="space-y-1">
+              <span className="text-[12px] font-black uppercase tracking-widest text-accent opacity-60">Mastery Achievement</span>
+              <h2 className="font-serif text-5xl font-black text-text-primary tracking-tighter">
+                {s.fluencyScore}
+              </h2>
+              <p className="text-[13px] font-bold text-text-secondary opacity-60 uppercase tracking-widest">Fluency Score</p>
+           </div>
+        </div>
 
-            {/* Assessment Cards */}
-            <div className="space-y-3">
-              <p className="text-[12px] font-bold uppercase tracking-widest text-text-secondary px-1">Detailed Feedback</p>
-              
-              <div className="card-success !p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">🌟</span>
-                  <h4 className="text-[14px] font-bold text-text-primary uppercase tracking-tight">Key Strengths</h4>
-                </div>
-                <p className="text-[13px] text-text-secondary leading-relaxed italic">{s.feedback}</p>
-              </div>
-
-              <div className="card-warning !p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">💡</span>
-                  <h4 className="text-[14px] font-bold text-text-primary uppercase tracking-tight">AI Recommendation</h4>
-                </div>
-                <p className="text-[13px] text-text-secondary leading-relaxed italic">{s.tipsForImprovement}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-4">
-              <button
-                type="button"
-                className="btn-primary flex items-center justify-center gap-2"
-                onClick={() => navigate(`/pronunciation/${s.id}`)}
-              >
-                <span>🔍</span> Phonics
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={handleClose}
-              >
-                Done
-              </button>
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="card text-center !p-6 border-0 bg-bg-subtle">
+             <p className="text-3xl font-black text-text-primary font-serif">{s.vocabularyScore}%</p>
+             <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Vocab</p>
+          </div>
+          <div className="card text-center !p-6 border-0 bg-bg-subtle">
+             <p className="text-3xl font-black text-text-primary font-serif">{s.accuracyScore}%</p>
+             <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Accuracy</p>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  if (phase === 'results' && result) {
-    return (
-      <div className="app-shell">
-        <div className="app-column min-h-screen">
-          <Header title="Results" showBack onBack={handleClose} />
-          <div className="page-content-no-nav space-y-4">
-            {newMilestones.length > 0 && (
-              <div className="card-warning result-card text-center py-6 px-4">
-                <LottieDuck type="celebrate" size={120} className="mb-2" />
-                <p className="font-bold text-text-primary text-lg">Achievement Unlocked!</p>
-                {newMilestones.map((m) => (
-                  <p key={m} className="text-[14px] text-text-secondary mt-1 font-medium">{m}</p>
-                ))}
-              </div>
-            )}
-
-            <div className="card-liquid text-center py-6 result-card">
-              <div className="font-serif text-[64px] text-accent leading-none">
-                <ScoreCounter target={result.fluencyScore} />
-              </div>
-              <p className="text-[13px] text-text-secondary mt-2">Fluency Score</p>
-              <p className="text-[13px] text-[#34a853] mt-1">↑ from last session</p>
-            </div>
-
-            {result.errorAnalysis.length > 0 && (
-              <div>
-                <p className="section-label mb-3">Mistakes found</p>
-                <div className="divider mb-3" />
-                <div className="space-y-3">
-                  {result.errorAnalysis.map((item: ErrorItem, i: number) => (
-                    <ErrorCard key={i} item={item} index={i} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="card-accent result-card" style={{ animationDelay: '240ms' }}>
-              <p className="section-label mb-2">AI Reply</p>
-              <p className="text-[15px] text-text-primary leading-relaxed italic mb-4">
-                "{result.dialogueReply}"
+        <div className="space-y-4">
+           <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary px-1 opacity-60 italic">AI Feedback</p>
+           <div className="card-liquid !p-8 shadow-2xl shadow-black/5 bg-accent/5 border-0">
+              <p className="font-serif text-lg text-text-primary leading-relaxed">
+                "{s.dialogueReply}"
               </p>
               <button
                 type="button"
-                onClick={() => speak(result.dialogueReply)}
-                className="btn-secondary !w-auto px-4 py-2 text-[13px] ml-auto block"
+                onClick={() => speak(s.dialogueReply)}
+                className="mt-6 text-[11px] font-black text-accent uppercase tracking-widest px-6 py-3 bg-white rounded-full shadow-sm"
               >
-                🔊 Listen
+                🔊 Hear AI Reply
               </button>
-            </div>
+           </div>
 
-            <div className="card-tip result-card" style={{ animationDelay: '320ms' }}>
-              <p className="font-medium text-text-primary mb-1">Pro tip</p>
-              <p className="text-[15px] text-text-secondary leading-relaxed">{result.grammarTip}</p>
-            </div>
+           <div className="card-liquid !p-8 border-0 bg-bg-subtle/50">
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-3">Recommendation</h4>
+              <p className="text-[14px] text-text-primary leading-relaxed">{s.tipsForImprovement}</p>
+           </div>
+        </div>
 
-            {result.pronunciationScore !== null && (
-              <button
-                type="button"
-                className="btn-secondary result-card"
-                style={{ animationDelay: '400ms' }}
-                onClick={() => navigate(`/session/${result.id}/pronunciation`)}
-              >
-                Pronunciation: {result.pronunciationScore}% — Detailed Analysis →
-              </button>
-            )}
-
-            <button type="button" className="btn-primary" onClick={handleNewSession}>
-              🎙 New Session
-            </button>
-          </div>
+        <div className="space-y-3 pt-4">
+          <button
+            type="button"
+            className="btn-primary !py-5 shadow-2xl shadow-accent/20"
+            onClick={handleNewSession}
+          >
+            New Practice
+          </button>
+          <button
+            type="button"
+            className="w-full py-4 text-[11px] font-black uppercase tracking-widest text-text-secondary opacity-40"
+            onClick={handleClose}
+          >
+            Return to Choices
+          </button>
         </div>
       </div>
     );

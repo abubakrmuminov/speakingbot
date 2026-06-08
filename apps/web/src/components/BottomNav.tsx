@@ -1,20 +1,14 @@
 import { NavLink, useLocation } from 'react-router-dom';
 
 const NAV = [
-  { to: '/dashboard', label: 'Explore', icon: '🧭' },
-  { to: '/reading', label: 'Dictionary', icon: '📖' },
-  { to: '/session', label: 'Word', icon: '🎙' },
-  { to: '/profile', label: 'Settings', icon: '⚙️' },
+  { to: '/reading', label: 'Reading', icon: '📖' },
+  { to: '/session', label: 'Listening', icon: '🎙' },
 ];
 
 export default function BottomNav() {
   const { pathname } = useLocation();
 
   const isActive = (to: string) => {
-    if (to === '/dashboard') return pathname === '/dashboard';
-    if (to === '/profile') {
-      return ['/profile', '/history', '/progress', '/milestones'].includes(pathname);
-    }
     return pathname.startsWith(to);
   };
 
