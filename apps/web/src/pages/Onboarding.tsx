@@ -1,27 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
+import LottieDuck from '../components/LottieDuck';
 
 const ONBOARDING_KEY = 'speakai_onboarding_done';
 
 const SCREENS = [
   {
-    icon: '🎙',
-    title: 'Speak. Learn. Improve.',
-    subtitle: 'Practice English with an AI that corrects you in real time',
-    button: 'Get Started →',
+    type: 'hello' as const,
+    title: 'Begin Your Journey',
+    subtitle: 'Practice English with a personal AI professor that corrects you in real time.',
+    button: 'Meet Professor Duckly →',
   },
   {
-    icon: '🎤',
-    title: 'Press. Speak. Improve.',
-    subtitle: 'Hold the mic, say anything in English. Get instant feedback on your mistakes.',
-    button: 'Continue →',
+    type: 'thinking' as const,
+    title: 'Precision Phonics',
+    subtitle: 'Get instant feedback on your pronunciation with visual aids and native-level analysis.',
+    button: 'Start Learning →',
   },
   {
-    icon: '📖',
-    title: 'Read. Understand. Grow.',
-    subtitle: 'IELTS-style texts with comprehension questions. Track your progress.',
-    button: 'Start Practicing',
+    type: 'study' as const,
+    title: 'Master Academic English',
+    subtitle: 'Dive into sophisticated passages and improve your vocabulary at a rapid pace.',
+    button: 'Enter the Classroom',
   },
 ];
 
@@ -57,38 +58,52 @@ export default function Onboarding() {
   const current = SCREENS[screen]!;
 
   return (
-    <div className="app-shell">
-      <div className="app-column min-h-screen relative">
+    <div className="app-shell overflow-hidden">
+      <div className="app-column min-h-screen relative px-6">
         {screen < 2 && (
           <button
             type="button"
             onClick={skip}
-            className="absolute top-4 right-4 z-10 btn-ghost text-sm"
+            className="absolute top-6 right-6 z-10 text-[12px] font-black uppercase tracking-widest text-text-secondary opacity-50 hover:opacity-100 transition-opacity"
           >
-            Skip
+            Skip Intro
           </button>
         )}
 
         <div
           key={animKey}
-          className="flex-1 flex flex-col items-center justify-center px-8 text-center animate-fade-up"
+          className="flex-1 flex flex-col items-center justify-center text-center animate-fade-up"
         >
-          <span className="text-[64px] mb-8">{current.icon}</span>
-          <h1 className="font-serif text-2xl text-text-primary mb-3">{current.title}</h1>
-          <p className="text-[15px] text-text-secondary leading-relaxed max-w-xs">{current.subtitle}</p>
+          <div className="relative mb-12">
+            <div className="absolute inset-0 bg-accent/10 blur-3xl rounded-full scale-125 animate-pulse" />
+            <LottieDuck type={current.type} size={280} className="relative z-10" />
+          </div>
 
-          <div className="flex gap-2 mt-10">
+          <div className="space-y-4 max-w-xs mb-10">
+            <h1 className="font-serif text-[32px] font-black text-text-primary tracking-tight leading-tight">
+              {current.title}
+            </h1>
+            <p className="text-[15px] font-medium text-text-secondary leading-relaxed opacity-80">
+              {current.subtitle}
+            </p>
+          </div>
+
+          <div className="flex gap-3 mb-10">
             {SCREENS.map((_, i) => (
-              <span
+              <div
                 key={i}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  i === screen ? 'bg-accent' : 'bg-line'
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i === screen ? 'w-8 bg-accent' : 'w-2 bg-line'
                 }`}
               />
             ))}
           </div>
 
-          <button type="button" onClick={goNext} className="btn-primary mt-8 max-w-xs">
+          <button 
+            type="button" 
+            onClick={goNext} 
+            className="btn-primary !py-4 shadow-xl shadow-accent/20 max-w-xs"
+          >
             {current.button}
           </button>
         </div>

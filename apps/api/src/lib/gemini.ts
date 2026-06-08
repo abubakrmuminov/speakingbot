@@ -247,7 +247,7 @@ export async function generateReading(
     .map((e, i) => `${i + 1}. ${e.pattern} (${e.occurrences}x)`)
     .join('\n');
 
-  const prompt = `Generate an academic reading passage (${difficulty}) with 8 questions (JSON).
+  const prompt = `Generate an academic reading passage (${difficulty}) with 8 objective questions (JSON).
 User's recent error patterns: ${topPatterns || 'None'}
 
 Passage must be 800-1000 words. All explanations in Russian.
@@ -257,8 +257,7 @@ JSON structure: {
   "difficulty": "${difficulty}", 
   "questions": [
     { "id": "q1", "type": "multiple_choice", "question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correctAnswer": "A. ...", "explanation": "..." },
-    { "id": "q4", "type": "true_false_ng", "question": "...", "correctAnswer": "True", "explanation": "..." },
-    { "id": "q7", "type": "open", "question": "...", "correctAnswer": "Sentence from passage", "explanation": "..." }
+    { "id": "q4", "type": "true_false_ng", "question": "...", "correctAnswer": "True", "explanation": "..." }
   ] 
 }`;
 

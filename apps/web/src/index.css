@@ -14,7 +14,7 @@
     color-scheme: light;
   }
 
-  [data-theme='dark'] {
+  [data-theme="dark"] {
     --color-bg: #0f0f0f;
     --color-bg-subtle: #141414;
     --color-surface: #1a1a1a;
@@ -51,7 +51,7 @@
       0 8px 32px rgba(0, 0, 0, 0.08);
   }
 
-  [data-theme='dark'] .liquid-glass {
+  [data-theme="dark"] .liquid-glass {
     background: rgba(20, 20, 20, 0.7);
     border: 0.5px solid rgba(255, 255, 255, 0.12);
     border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
@@ -81,9 +81,30 @@
   }
 
   .card {
-    @apply rounded-card border p-4;
+    @apply rounded-2xl border p-4;
     background: var(--color-surface);
     border-color: var(--color-line);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .streak-card-gradient {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+  }
+
+  [data-theme="dark"] .streak-card-gradient {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .course-card {
+    @apply flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-[0.99];
+    background: var(--color-surface);
+    border-color: var(--color-line);
+  }
+
+  .course-card:hover {
+    @apply bg-bg-subtle;
   }
 
   .card-liquid {
@@ -110,8 +131,16 @@
 
   .card-accent {
     @apply card;
-    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
-    border-color: color-mix(in srgb, var(--color-accent) 25%, var(--color-line));
+    background: color-mix(
+      in srgb,
+      var(--color-accent) 8%,
+      var(--color-surface)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--color-accent) 25%,
+      var(--color-line)
+    );
   }
 
   .card-tip {
@@ -210,7 +239,8 @@
   .input:focus,
   .textarea:focus {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--color-accent) 20%, transparent);
   }
 
   .input::placeholder,
@@ -247,7 +277,7 @@
   }
 
   .score-number {
-    font-feature-settings: 'tnum';
+    font-feature-settings: "tnum";
     font-variant-numeric: tabular-nums;
   }
 
@@ -260,11 +290,21 @@
     opacity: 0;
   }
 
-  .result-card:nth-child(1) { animation-delay: 0ms; }
-  .result-card:nth-child(2) { animation-delay: 80ms; }
-  .result-card:nth-child(3) { animation-delay: 160ms; }
-  .result-card:nth-child(4) { animation-delay: 240ms; }
-  .result-card:nth-child(5) { animation-delay: 320ms; }
+  .result-card:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .result-card:nth-child(2) {
+    animation-delay: 80ms;
+  }
+  .result-card:nth-child(3) {
+    animation-delay: 160ms;
+  }
+  .result-card:nth-child(4) {
+    animation-delay: 240ms;
+  }
+  .result-card:nth-child(5) {
+    animation-delay: 320ms;
+  }
 
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
@@ -276,11 +316,22 @@
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes micPulse {
-  0%, 100% { box-shadow: 0 4px 16px rgba(217, 48, 37, 0.35); }
-  50% { box-shadow: 0 4px 28px rgba(217, 48, 37, 0.65); }
+  0%,
+  100% {
+    box-shadow: 0 4px 16px rgba(217, 48, 37, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 28px rgba(217, 48, 37, 0.65);
+  }
 }

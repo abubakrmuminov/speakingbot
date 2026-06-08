@@ -7,6 +7,7 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useSpeech } from '../hooks/useSpeech';
 import { useTheme } from '../hooks/useTheme';
 import Header from '../components/Header';
+import LottieDuck from '../components/LottieDuck';
 import type { ErrorItem } from '@speaking-coach/shared';
 
 function Waveform({ analyserNode }: { analyserNode: AnalyserNode }) {
@@ -172,8 +173,9 @@ export default function Session() {
   if (phase === 'topic' && startMutation.isPending) {
     return (
       <div className="app-shell">
-        <div className="app-column min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <div className="app-column min-h-screen flex flex-col items-center justify-center gap-4">
+          <LottieDuck type="search" size={150} />
+          <p className="text-[13px] text-text-secondary">Finding a topic…</p>
         </div>
       </div>
     );
@@ -181,37 +183,56 @@ export default function Session() {
 
   if ((phase === 'topic' || phase === 'idle') && topic) {
     return (
-      <div className="app-shell">
+      <div className="app-shell pb-8">
         <div className="app-column min-h-screen relative px-4">
           <CloseButton onClick={handleClose} />
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 animate-fade-up pb-8">
-            <div className="card-liquid w-full p-6">
-              <h2 className="font-serif text-xl text-text-primary mb-3">{scenarioLabel}</h2>
-              <p className="text-[15px] text-text-secondary leading-relaxed mb-4">{topic.topic}</p>
-              <div className="flex items-center gap-2">
-                <span className="badge-accent">{topic.difficulty}</span>
-                <span className="text-[13px] text-text-secondary">· ~5 min</span>
+          <div className="flex-1 flex flex-col items-center justify-center gap-8 animate-fade-up">
+            
+            {/* Hero Section */}
+            <div className="text-center pt-8">
+              <LottieDuck type="hello" size={160} className="mb-2" />
+              <h2 className="font-serif text-3xl text-text-primary tracking-tight">Speaking Scenarios</h2>
+              <p className="text-[14px] text-text-secondary mt-1 max-w-[280px] mx-auto leading-relaxed">
+                Practice real-life English conversations with AI.
+              </p>
+            </div>
+
+            <div className="card-liquid w-full p-6 shadow-md border-line/50">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="badge-accent uppercase text-[10px] px-2 py-0.5">{topic.difficulty}</span>
+                <span className="text-[12px] font-bold text-text-secondary uppercase tracking-widest">Scenario</span>
+              </div>
+              <h3 className="font-serif text-2xl text-text-primary mb-3 leading-tight">{scenarioLabel}</h3>
+              <div className="p-4 bg-bg-subtle rounded-2xl border border-line/30 mb-6 italic text-[15px] text-text-secondary leading-relaxed">
+                "{topic.topic}"
+              </div>
+              
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-1.5 text-[13px] text-text-secondary font-medium">
+                  <span>⏲</span> ~5 min practice
+                </div>
+                <button
+                  type="button"
+                  className="text-[12px] font-black uppercase tracking-widest text-accent flex items-center gap-1"
+                  onClick={() => { reset(); startMutation.mutate(); }}
+                >
+                  🔄 New Topic
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-4 w-full">
               <button
                 type="button"
-                className="w-20 h-20 rounded-full bg-accent text-white text-3xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                className="w-full btn-primary py-4 shadow-xl shadow-accent/20 flex items-center justify-center gap-3"
                 onClick={() => { setPhase('recording'); void startRecording(); }}
               >
-                🎙
+                <span className="text-xl">🎙</span> Start Recording
               </button>
-              <span className="text-[13px] text-text-secondary">Tap to speak</span>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-text-secondary opacity-60">
+                AI is ready to listen
+              </p>
             </div>
-
-            <button
-              type="button"
-              className="btn-ghost text-[13px]"
-              onClick={() => { reset(); startMutation.mutate(); }}
-            >
-              🔄 New topic
-            </button>
           </div>
         </div>
       </div>
@@ -224,21 +245,46 @@ export default function Session() {
 
     return (
       <div className="app-shell">
-        <div className="app-column min-h-screen relative px-4">
+        <div className="app-column min-h-screen relative px-6">
           <CloseButton onClick={handleClose} />
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 animate-fade-up">
-            <p className="text-[13px] text-text-secondary">{scenarioLabel}</p>
-            {analyserNode && <div className="w-full px-4"><Waveform analyserNode={analyserNode} /></div>}
-            <button
-              type="button"
-              onClick={handleStopRecording}
-              className="w-20 h-20 rounded-full bg-[#d93025] text-white text-2xl flex items-center justify-center mic-recording active:scale-95"
-            >
-              ⏹
-            </button>
-            <span className="text-2xl font-medium score-number text-text-primary">{mins}:{secs}</span>
-            <span className="text-[13px] text-text-secondary">Recording...</span>
-            {micError && <p className="text-[#d93025] text-sm">{micError}</p>}
+          <div className="flex-1 flex flex-col items-center justify-center gap-12 animate-fade-up">
+            
+            <div className="text-center space-y-1">
+              <p className="text-[12px] font-black uppercase tracking-widest text-accent animate-pulse">Live Recording</p>
+              <h3 className="text-[16px] font-bold text-text-primary uppercase tracking-tight">{scenarioLabel}</h3>
+            </div>
+
+            <div className="w-full card-liquid p-8 flex flex-col items-center gap-8 shadow-2xl border-accent/20">
+               {analyserNode && (
+                 <div className="w-full h-24 flex items-center">
+                   <Waveform analyserNode={analyserNode} />
+                 </div>
+               )}
+               
+               <div className="text-5xl font-serif text-text-primary score-number tracking-tighter">
+                 {mins}<span className="opacity-30 mx-1">:</span>{secs}
+               </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-6">
+              <button
+                type="button"
+                onClick={handleStopRecording}
+                className="w-24 h-24 rounded-full bg-[#d93025] text-white text-3xl flex items-center justify-center shadow-2xl shadow-red-500/30 active:scale-90 transition-all mic-recording border-8 border-white/10"
+              >
+                ⏹
+              </button>
+              <div className="text-center">
+                <p className="text-[14px] font-bold text-text-primary">Tap to stop</p>
+                <p className="text-[12px] text-text-secondary mt-0.5">Your progress is saved automatically</p>
+              </div>
+            </div>
+
+            {micError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                 <p className="text-[#d93025] text-[13px] font-medium">⚠️ {micError}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -248,9 +294,93 @@ export default function Session() {
   if (phase === 'processing') {
     return (
       <div className="app-shell">
-        <div className="app-column min-h-screen flex flex-col items-center justify-center gap-4">
-          <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-[13px] text-text-secondary">Analysing your speech…</p>
+        <div className="app-column min-h-screen relative px-6">
+          <CloseButton onClick={handleClose} />
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 animate-fade-up">
+            <LottieDuck type="search" size={200} className="mb-4" />
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-bold text-text-primary tracking-tight">AI is analyzing your speech</h3>
+              <p className="text-[14px] text-text-secondary leading-relaxed max-w-[240px] mx-auto">
+                Comparing your pronunciation and vocabulary to native standards...
+              </p>
+            </div>
+            <div className="w-48 h-1 bg-bg-subtle rounded-full overflow-hidden mt-4">
+              <div className="h-full bg-accent animate-loading-bar" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'results' && result) {
+    const s = result as any;
+    return (
+      <div className="app-shell select-none pb-8">
+        <div className="app-column min-h-screen relative px-4">
+          <CloseButton onClick={handleClose} />
+          <div className="flex-1 flex flex-col gap-6 pt-12 animate-fade-up">
+            
+            {/* Score Hero */}
+            <div className="card-liquid text-center py-10 relative overflow-hidden">
+               <div className="absolute -top-10 -right-10 opacity-10 rotate-12 pointer-events-none">
+                 <LottieDuck type="celebrate" size={240} />
+               </div>
+               <div className="font-serif text-[84px] text-accent font-black tracking-tighter leading-none mb-1">
+                 {s.fluencyScore}
+               </div>
+               <p className="text-[14px] font-bold uppercase tracking-widest text-text-secondary">Fluency Level</p>
+               
+               <div className="mt-8 grid grid-cols-2 gap-4 max-w-[280px] mx-auto">
+                 <div className="text-center p-3 rounded-2xl bg-white/40 dark:bg-black/20 border border-white/50">
+                    <p className="text-lg font-black text-text-primary">{s.vocabularyScore}%</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Vocab</p>
+                 </div>
+                 <div className="text-center p-3 rounded-2xl bg-white/40 dark:bg-black/20 border border-white/50">
+                    <p className="text-lg font-black text-text-primary">{s.accuracyScore}%</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Accuracy</p>
+                 </div>
+               </div>
+            </div>
+
+            {/* Assessment Cards */}
+            <div className="space-y-3">
+              <p className="text-[12px] font-bold uppercase tracking-widest text-text-secondary px-1">Detailed Feedback</p>
+              
+              <div className="card-success !p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🌟</span>
+                  <h4 className="text-[14px] font-bold text-text-primary uppercase tracking-tight">Key Strengths</h4>
+                </div>
+                <p className="text-[13px] text-text-secondary leading-relaxed italic">{s.feedback}</p>
+              </div>
+
+              <div className="card-warning !p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">💡</span>
+                  <h4 className="text-[14px] font-bold text-text-primary uppercase tracking-tight">AI Recommendation</h4>
+                </div>
+                <p className="text-[13px] text-text-secondary leading-relaxed italic">{s.tipsForImprovement}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-4">
+              <button
+                type="button"
+                className="btn-primary flex items-center justify-center gap-2"
+                onClick={() => navigate(`/pronunciation/${s.id}`)}
+              >
+                <span>🔍</span> Phonics
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleClose}
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -263,11 +393,11 @@ export default function Session() {
           <Header title="Results" showBack onBack={handleClose} />
           <div className="page-content-no-nav space-y-4">
             {newMilestones.length > 0 && (
-              <div className="card-warning result-card text-center py-4">
-                <div className="text-2xl mb-1">🎉</div>
-                <p className="font-medium text-text-primary">Achievement Unlocked!</p>
+              <div className="card-warning result-card text-center py-6 px-4">
+                <LottieDuck type="celebrate" size={120} className="mb-2" />
+                <p className="font-bold text-text-primary text-lg">Achievement Unlocked!</p>
                 {newMilestones.map((m) => (
-                  <p key={m} className="text-[13px] text-text-secondary mt-1">{m}</p>
+                  <p key={m} className="text-[14px] text-text-secondary mt-1 font-medium">{m}</p>
                 ))}
               </div>
             )}

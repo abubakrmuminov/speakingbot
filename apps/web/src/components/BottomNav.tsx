@@ -1,10 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 
 const NAV = [
-  { to: '/dashboard', label: 'Home', icon: '🏠' },
-  { to: '/session', label: 'Speaking', icon: '🎙' },
-  { to: '/reading', label: 'Reading', icon: '📖' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
+  { to: '/dashboard', label: 'Explore', icon: '🧭' },
+  { to: '/reading', label: 'Dictionary', icon: '📖' },
+  { to: '/session', label: 'Word', icon: '🎙' },
+  { to: '/profile', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function BottomNav() {

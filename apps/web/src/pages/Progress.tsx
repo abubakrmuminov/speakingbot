@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LineChart, Line, XAxis, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { api } from '../lib/api';
+import LottieDuck from '../components/LottieDuck';
 import type { HeatmapDay } from '@speaking-coach/shared';
 
 function Heatmap({ data }: { data: HeatmapDay[] }) {
@@ -9,7 +10,7 @@ function Heatmap({ data }: { data: HeatmapDay[] }) {
   const today = new Date();
   const days: { date: string; count: number }[] = [];
 
-  for (let i = 364; i >= 0; i--) {
+  for (let i = 210; i >= 0; i--) { // Show ~7 months for mobile
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
@@ -17,9 +18,10 @@ function Heatmap({ data }: { data: HeatmapDay[] }) {
   }
 
   const cellColor = (count: number) => {
-    if (count === 0) return 'bg-line';
-    if (count === 1) return 'bg-[#93c4fd]';
-    return 'bg-accent';
+    if (count === 0) return 'bg-line opacity-30';
+    if (count === 1) return 'bg-accent/40';
+    if (count === 2) return 'bg-accent/70';
+    return 'bg-accent shadow-[0_0_8px_rgba(26,115,232,0.4)]';
   };
 
   const weeks: (typeof days)[] = [];
@@ -28,24 +30,24 @@ function Heatmap({ data }: { data: HeatmapDay[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex gap-0.5 min-w-max">
+    <div className="overflow-x-auto pb-2 custom-scrollbar">
+      <div className="flex gap-1 min-w-max">
         {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-0.5">
+          <div key={wi} className="flex flex-col gap-1">
             {week.map((day) => (
               <div
                 key={day.date}
                 title={`${day.date}: ${day.count} session${day.count !== 1 ? 's' : ''}`}
-                className={`w-2.5 h-2.5 rounded-sm ${cellColor(day.count)}`}
+                className={`w-3 h-3 rounded-[3px] transition-all ${cellColor(day.count)}`}
               />
             ))}
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-1 mt-3 text-[11px] text-text-secondary">
+      <div className="flex items-center gap-2 mt-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
         <span>Less</span>
-        {[0, 1, 3].map((v) => (
-          <div key={v} className={`w-2.5 h-2.5 rounded-sm ${cellColor(v)}`} />
+        {[0, 1, 2, 3].map((v) => (
+          <div key={v} className={`w-3 h-3 rounded-[3px] ${cellColor(v)}`} />
         ))}
         <span>More</span>
       </div>
@@ -88,83 +90,129 @@ export default function Progress() {
   const patterns = patternsData?.patterns ?? [];
 
   return (
-    <div className="space-y-0 -mt-2">
-      <div className="py-2">
-        <p className="section-label mb-3">Activity</p>
+    <div className="space-y-8 animate-fade-up pb-8">
+      {/* Header with Hero */}
+      <div className="text-center pt-4">
+        <LottieDuck type="search" size={140} className="mb-2 mx-auto" />
+        <h1 className="font-serif text-3xl text-text-primary tracking-tight">Performance</h1>
+        <p className="text-[14px] text-text-secondary mt-1">Visualize your journey to fluency.</p>
+      </div>
+
+      {/* Activity Section */}
+      <div className="card shadow-sm !p-6">
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary">Activity Heatmap</p>
+          <span className="text-[11px] font-bold text-accent px-2 py-0.5 bg-accent/10 rounded-full">Last 7 Months</span>
+        </div>
         {heatmapData ? (
           <Heatmap data={heatmapData.heatmap} />
         ) : (
-          <div className="h-20 flex items-center justify-center text-text-secondary text-[13px]">Loading…</div>
+          <div className="h-20 animate-pulse bg-bg-subtle rounded-xl" />
         )}
       </div>
 
-      <div className="divider my-4" />
+      {/* Fluency Chart */}
+      <div className="card shadow-sm !p-6">
+        <div className="flex flex-col gap-4 mb-6">
+          <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary">Fluency Progress</p>
+          <div className="flex p-0.5 bg-bg-subtle rounded-xl border border-line w-fit">
+            {([7, 30, 90] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDays(d)}
+                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                  days === d 
+                    ? 'bg-white dark:bg-bg-subtle text-accent shadow-sm' 
+                    : 'text-text-secondary'
+                }`}
+              >
+                {d}D
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="py-2">
-        <p className="section-label mb-3">Fluency over time</p>
-        <div className="flex gap-2 mb-4">
-          {([7, 30, 90] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDays(d)}
-              className={days === d ? 'toggle-btn-active' : 'toggle-btn'}
-            >
-              {d}d
-            </button>
+        {chartData && chartData.points.length > 0 ? (
+          <div className="h-48 -mx-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData.points}>
+                <defs>
+                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <Tooltip 
+                  contentStyle={{ 
+                    borderRadius: '16px', 
+                    border: '1px solid var(--color-line)',
+                    backgroundColor: 'rgba(255,255,255,0.8)',
+                    backdropFilter: 'blur(8px)',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="var(--color-accent)" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#colorScore)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-40 flex flex-col items-center justify-center text-text-secondary text-[13px] gap-2">
+            <span className="text-2xl opacity-30">📊</span>
+            Keep practicing to see your chart
+          </div>
+        )}
+      </div>
+
+      {/* Mistake Categories */}
+      <div className="card shadow-sm !p-6">
+        <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary mb-6">Error Categories</p>
+        <div className="space-y-6">
+          {(['grammar', 'vocabulary', 'pronunciation'] as const).map((cat) => (
+            <div key={cat} className="space-y-2">
+              <div className="flex justify-between items-end">
+                <span className="text-[13px] font-bold text-text-primary uppercase tracking-tight">{cat}</span>
+                <span className="text-[12px] font-black text-accent">{categoryTotals[cat]}%</span>
+              </div>
+              <div className="progress-bar h-2.5">
+                <div 
+                  className="progress-bar-fill shadow-[0_0_8px_rgba(26,115,232,0.3)] transition-all duration-1000" 
+                  style={{ width: `${categoryTotals[cat]}%` }} 
+                />
+              </div>
+            </div>
           ))}
         </div>
-        {chartData && chartData.points.length > 0 ? (
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={chartData.points}>
-              <XAxis
-                dataKey="date"
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
-                tickFormatter={(v: string) => v.slice(5)}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Line type="monotone" dataKey="score" stroke="#1a73e8" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <p className="text-[13px] text-text-secondary text-center py-8">No data yet</p>
-        )}
       </div>
 
-      <div className="divider my-4" />
-
-      <div className="py-2">
-        <p className="section-label mb-4">Mistakes by category</p>
-        {(['grammar', 'vocabulary', 'pronunciation'] as const).map((cat) => (
-          <div key={cat} className="flex items-center gap-3 mb-3">
-            <span className="text-[15px] text-text-primary w-28 capitalize">{cat}</span>
-            <div className="progress-bar flex-1 h-2">
-              <div className="progress-bar-fill h-2" style={{ width: `${categoryTotals[cat]}%` }} />
-            </div>
-            <span className="text-[13px] text-text-secondary w-8">{categoryTotals[cat]}%</span>
-          </div>
-        ))}
-      </div>
-
+      {/* Recurring Patterns */}
       {patterns.length > 0 && (
-        <>
-          <div className="divider my-4" />
-          <div className="py-2">
-            <p className="section-label mb-3">Recurring patterns</p>
-            {patterns.slice(0, 10).map((p) => (
-              <div key={p.id} className="list-item flex items-center justify-between">
-                <span className="text-[15px] text-text-primary">{p.pattern}</span>
+        <div className="card shadow-sm !p-6">
+          <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary mb-4">Recurring Patterns</p>
+          <div className="space-y-3">
+            {patterns.slice(0, 8).map((p) => (
+              <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-bg-subtle border border-line/30">
+                <span className="text-[14px] font-medium text-text-primary truncate pr-2">{p.pattern}</span>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[13px] text-text-secondary">{p.occurrences}×</span>
-                  <span className={p.resolved ? 'badge-green' : 'badge-gray'}>
-                    {p.resolved ? 'resolved ✓' : 'active'}
-                  </span>
+                   <div className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                     p.resolved ? 'bg-[#34a853]/10 text-[#34a853]' : 'bg-orange-500/10 text-orange-500'
+                   }`}>
+                     {p.resolved ? 'Fixed' : 'Active'}
+                   </div>
+                  <span className="text-[12px] font-bold text-text-secondary">{p.occurrences}×</span>
                 </div>
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

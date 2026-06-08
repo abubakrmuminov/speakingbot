@@ -39,84 +39,97 @@ export default function SessionDetail() {
   const date = new Date(session.createdAt);
 
   return (
-    <div className="space-y-0 -mt-2">
-      <Header title={session.topic} showBack onBack={() => navigate('/history')} />
-
-      <p className="text-[13px] text-text-secondary py-2">
-        {date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
-        {' · '}
-        {date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}
-      </p>
-
-      <div className="divider" />
-
-      <div className="py-4 text-center">
-        <p className="section-label mb-2">Fluency Score</p>
-        <span className="font-serif text-5xl text-accent">{session.fluencyScore}</span>
+    <div className="space-y-6 animate-fade-up pb-8 pt-2">
+      <div className="flex items-center justify-between px-1">
+        <button 
+          onClick={() => navigate('/history')}
+          className="w-10 h-10 rounded-full border border-line flex items-center justify-center text-text-secondary hover:text-accent transition-colors"
+        >
+          ←
+        </button>
+        <div className="text-right">
+          <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-60">Session Recorded</p>
+          <p className="text-[12px] font-bold text-text-primary">
+            {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • {date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}
+          </p>
+        </div>
       </div>
 
-      <div className="divider" />
+      <div className="card-liquid text-center py-10 relative overflow-hidden">
+         <div className="font-serif text-[84px] text-accent font-black tracking-tighter leading-none mb-1">
+           {session.fluencyScore}
+         </div>
+         <p className="text-[14px] font-bold uppercase tracking-widest text-text-secondary">Fluency Score</p>
+         <h2 className="mt-4 text-xl font-bold text-text-primary uppercase tracking-tight opacity-90">{session.topic}</h2>
+      </div>
 
       {session.transcript && (
-        <>
-          <div className="py-4">
-            <p className="section-label mb-3">What you said</p>
-            <p className="text-[15px] italic text-text-secondary leading-relaxed bg-bg-subtle rounded-xl p-4">
-              "{session.transcript}"
+        <div className="space-y-3">
+          <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary px-1">Your Performance</p>
+          <div className="bg-surface/50 border border-line rounded-[32px] p-6 relative">
+            <span className="absolute top-4 left-4 text-4xl text-accent/10 font-serif">“</span>
+            <p className="font-serif text-lg text-text-primary leading-relaxed italic relative z-10 px-2">
+              {session.transcript}
             </p>
+            <span className="absolute bottom-4 right-4 text-4xl text-accent/10 font-serif rotate-180">“</span>
           </div>
-          <div className="divider" />
-        </>
+        </div>
       )}
 
-      <div className="py-4">
-        <p className="section-label mb-3">Mistakes</p>
-        {errors.length > 0 ? (
+      {errors.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-[12px] font-black uppercase tracking-widest text-text-secondary px-1">Critical Corrections</p>
           <div className="space-y-3">
             {errors.map((item, i) => (
-              <div key={i} className="card-error">
-                <p className="text-[15px] text-text-primary">
-                  ❌ {item.original} → <span className="text-[#34a853]">{item.corrected}</span>
-                </p>
-                <p className="text-[13px] text-text-secondary mt-2">💡 {item.explanation}</p>
+              <div key={i} className="card border-l-4 border-l-[#d93025] !p-5 shadow-sm">
+                <div className="flex items-start gap-3 mb-2">
+                  <span className="text-lg mt-0.5">❌</span>
+                  <div className="flex-1">
+                    <p className="text-[14px] font-bold text-text-primary line-through opacity-50 decoration-2">{item.original}</p>
+                    <p className="text-[16px] font-black text-[#34a853] mt-1">{item.corrected}</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-line/30 flex gap-2">
+                   <span className="text-sm opacity-60">💡</span>
+                   <p className="text-[13px] text-text-secondary leading-relaxed font-medium italic">{item.explanation}</p>
+                </div>
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-[15px] text-[#34a853]">No significant errors — great work!</p>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="card-accent mt-4">
-        <p className="section-label mb-2">AI said:</p>
-        <p className="text-[15px] text-text-primary leading-relaxed italic">"{session.dialogueReply}"</p>
-        <button
-          type="button"
-          onClick={() => speak(session.dialogueReply)}
-          className="btn-ghost text-[13px] mt-2"
-        >
-          🔊 Listen
-        </button>
-      </div>
-
-      <div className="card-tip mt-4">
-        <p className="font-medium text-text-primary mb-1">Pro tip</p>
-        <p className="text-[15px] text-text-secondary leading-relaxed">{session.grammarTip}</p>
+      <div className="card-success !p-6">
+        <div className="flex items-center justify-between mb-4">
+           <p className="text-[12px] font-black uppercase tracking-widest text-text-primary">AI Feedback</p>
+           <button
+            type="button"
+            onClick={() => speak(session.dialogueReply)}
+            className="w-10 h-10 rounded-full bg-white/50 flex items-center justify-center text-lg active:scale-95 shadow-sm"
+          >
+            🔊
+          </button>
+        </div>
+        <p className="text-[15px] text-text-primary leading-relaxed italic mb-4 font-serif">"{session.dialogueReply}"</p>
+        <div className="pt-4 border-t border-black/5 opacity-80">
+           <p className="text-[11px] font-black uppercase tracking-tighter text-text-primary mb-1">Grammar Tip</p>
+           <p className="text-[13px] font-medium leading-relaxed">{session.grammarTip}</p>
+        </div>
       </div>
 
       {session.pronunciationScore !== null && (
         <button
           type="button"
-          className="btn-primary !bg-brand-600 !border-brand-500 mt-6 shadow-lg shadow-brand-500/20 py-4"
+          className="btn-primary !py-5 shadow-xl shadow-accent/20"
           onClick={() => navigate(`/session/${session.id}/pronunciation`)}
         >
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-lg">🎯</span>
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-2xl">🔍</span>
             <div className="text-left">
-              <div className="text-[10px] uppercase font-bold opacity-80 leading-none">View Details</div>
-              <div className="text-[15px] font-bold">Pronunciation: {session.pronunciationScore}%</div>
+              <div className="text-[11px] font-black uppercase tracking-widest opacity-70 leading-none mb-1">Deep Analysis</div>
+              <div className="text-[16px] font-black">Phonics Detail: {session.pronunciationScore}%</div>
             </div>
-            <span className="ml-auto text-xl">→</span>
+            <span className="ml-auto text-2xl font-serif">›</span>
           </div>
         </button>
       )}
